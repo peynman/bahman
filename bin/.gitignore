@@ -1,0 +1,5 @@
+
+platforms/OSX/debug/modules/*
+platforms/*
+public/assets/*
+public/templates/*

@@ -1,0 +1,10 @@
+
+vendor/*
+node_modules/*
+.idea
+
+project_requirements.txt
+project_structure.txt
+.DS_Store
+.env
+.env.test

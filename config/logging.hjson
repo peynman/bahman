@@ -1,0 +1,17 @@
+{
+    channels: {
+        console: {
+            driver: "stdout",
+            level: "debug",
+            format: "text",
+        },
+        file: {
+            driver: "daily",
+            path: storage("logs/avalanche.log")
+            level: "warn",
+            format: "text",
+            hooks: [],
+        },
+    },
+    hooks: ["console", "file"],
+}

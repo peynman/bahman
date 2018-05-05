@@ -1,0 +1,14 @@
+{
+  "name": "avalanche",
+  "version": "1.0.0",
+  "description": "Avalanche WebServer ",
+  "main": "resources/views/assets/js/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Peyman Abdi",
+  "license": "MIT",
+  "devDependencies": {
+    "jquery": "^3.3.1"
+  }
+}
