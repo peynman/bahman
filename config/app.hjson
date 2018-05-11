@@ -1,4 +1,4 @@
 {
-    title: "Avalanche WebServer",
     debug: env(DEBUG, false),
+    locale: "en",
 }

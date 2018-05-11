@@ -9,7 +9,7 @@
             driver: "daily",
             path: storage("logs/avalanche.log")
             level: "warn",
-            format: "text",
+            format: "json",
             hooks: [],
         },
     },

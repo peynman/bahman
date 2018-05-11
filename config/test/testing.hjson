@@ -1,9 +1,0 @@
-{
-    evaluations: {
-        port_in_env_default_2200: env(PortDefault, 2200),
-        port_in_env: env(port, 2200),
-        storage: storage("/path/to/storage"),
-        root: root("/path/to/root"),
-        resources: resources("path/to/resources"),
-    }
-}

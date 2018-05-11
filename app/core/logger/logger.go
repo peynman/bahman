@@ -2,48 +2,22 @@ package logger
 
 import (
 	"github.com/sirupsen/logrus"
-	"os"
-	"avalanche/app/libs"
-	"path/filepath"
-	plugin2 "plugin"
-	"strings"
-	"avalanche/app/libs/interfaces"
-	"AvConfig/lib"
+	"avalanche/app/core/interfaces"
+	"avalanche/app/core/app"
+	"avalanche/app/core/config"
 )
 
 var (
-	loggers []logrus.Logger
+	loggers []*logrus.Logger
 	channels = make(map[string]interfaces.LoggingChannel)
 )
 
 func Initialize()  {
 	/* load channel plugins */
-	var moduleFiles []string
-	channelModulesDir := app.ModulesPath("channels")
-	filepath.Walk(channelModulesDir, func(path string, info os.FileInfo, err error) error {
-		moduleFiles = append(moduleFiles, path)
-		return nil
-	})
-	for _, moduleFile := range moduleFiles {
-		if !strings.HasSuffix(moduleFile, ".so") {
-			continue
-		}
-
-		plugin, err := plugin2.Open(moduleFile)
-		if err != nil {
-			panic(err)
-		}
-
-		symInstance, err := plugin.Lookup("GetInstance")
-		if err != nil {
-			panic(err)
-		}
-
-		instance := symInstance.(func() interfaces.LoggingChannel)
-		filename := filepath.Base(moduleFile)
-		extension := filepath.Ext(moduleFile)
-		driverName := filename[0:len(filename)-len(extension)]
-		channels[driverName] = instance()
+	modules := app.InitAvalanchePlugins(app.ModulesPath("channels"))
+	for _, module := range modules {
+		logChannel := module.Interface().(interfaces.LoggingChannel)
+		channels[logChannel.GetChannelName()] = logChannel
 	}
 
 	/* setup channel drivers */
@@ -51,9 +25,9 @@ func Initialize()  {
 	for _, driverName := range logDrivers {
 		driver := channels[driverName]
 		if driver == nil {
-			panic("Driver with name " + driverName + " not found in log channels")
+			panic("Driver with name " + driver.GetChannelName() + " not found in log channels")
 		}
-		if driver.Config("logging.channels." + driverName) {
+		if driver.Config("logging.channels." + driver.GetChannelName()) {
 			loggers = append(loggers, driver.GetLogger())
 		}
 	}

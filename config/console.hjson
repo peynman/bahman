@@ -1,0 +1,6 @@
+{
+    backgroundColor: "black",
+    choiceTextColor: "yellow",
+    currentChoiceBackgroundColor: "green",
+    currentChoiceTextColor: "yellow",
+}

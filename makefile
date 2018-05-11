@@ -3,13 +3,17 @@
 ##
 
 ##### CONFIG BUILD
-BINARY_NAME=avalanche_server
-MODULE_FILES=$(wildcard ./app/libs/logger/*/*.go)
 DEBUG=1
 
 ##### METHODS
-define getModulePath
-$(MODULES_PATH)/$(if ($(findstring $(1),logger),''),channels,$(lastword $(subst /, ,$(dir $(1)))))/$(basename $(notdir $(1))).so
+define getAppModulesPath
+$(MODULES_PATH)/plugins/$(basename $(notdir $(1))).so
+endef
+define getCliModulesPath
+$(MODULES_PATH)/console/$(basename $(notdir $(1))).so
+endef
+define getLoggerModulesPath
+$(MODULES_PATH)/channels/$(basename $(notdir $(1))).so
 endef
 define getVariant
 $(if ($(DEBUG),1),DEBUG,PRODUCTION)
@@ -25,10 +29,14 @@ GORUN=$(GOCMD) run
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
-ENTRY=app/main.go
+SERVER_ENTRY=app/server.go
+CLI_ENTRY=app/commands/cli.go
+LOGGER_MODULES=$(wildcard ./app/core/logger/*/*.go)
+CLI_MODULES=$(wildcard ./app/commands/*/*.go)
+APP_MODULES=$(wildcard ./app/modules/*/main/*.go)
 
 #### EXPORT PATHES
-BINARY_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)/$(BINARY_NAME)
+BINARY_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)
 MODULES_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)/modules
 
 #### GO VARIABLES
@@ -37,15 +45,22 @@ PLATFORM=$(call getPlatform)
 VARIANT=$(call getVariant)
 BUILD_TIME=$(date ”%Y.%m.%d.%H%M%S”)
 BUILD_CODE=$(shell git rev-parse HEAD)
-PACKAGE=avalanche/app/libs
+PACKAGE=avalanche/app/core/app
 
 LDFLAGS=-ldflags "-X $(PACKAGE).Version=$(VERSION) -X $(PACKAGE).Code=$(BUILD_CODE) -X $(PACKAGE).Variant=$(VARIANT) -X $(PACKAGE).Platform=$(PLATFORM) -X $(PACKAGE).BuildTime=$(BUILD_TIME)"
 
 #### SCRIPTS
 all: test modules build
-build_n_run: modules build dev
-build:
-	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH) -v $(ENTRY)
+build_n_serve: modules build serve
+build: build_cli build_server
+build_cli: build_cli_only cli_modules app_modules
+build_server: build_server_only logger_modules app_modules
+modules: logger_modules cli_modules app_modules
+
+build_server_only:
+	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH$)/$(basename $(notdir $(SERVER_ENTRY))) -v $(SERVER_ENTRY)
+build_cli_only:
+	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH$)/$(basename $(notdir $(CLI_ENTRY))) -v $(CLI_ENTRY)
 test:
 	$(GOTEST) ./...
 clean:
@@ -53,7 +68,11 @@ clean:
 	rm -f $(BINARY_PATH)
 run:
 	$(GORUN) $(ENTRY)
-dev:
-	./$(BINARY_PATH)
-modules:
-	$(foreach file, $(MODULE_FILES), $(GOBUILD) -buildmode=plugin -o $(call getModulePath, $(file)) -v $(file);)
+serve:
+	./$(BINARY_PATH)/$(basename $(notdir $(SERVER_ENTRY)))
+logger_modules:
+	$(foreach file, $(LOGGER_MODULES), $(GOBUILD) -buildmode=plugin -o $(call getLoggerModulesPath, $(file)) -v $(file);)
+cli_modules:
+	$(foreach file, $(CLI_MODULES), $(GOBUILD) -buildmode=plugin -o $(call getCliModulesPath, $(file)) -v $(file);)
+app_modules:
+	$(foreach file, $(APP_MODULES), $(GOBUILD) -buildmode=plugin -o $(call getAppModulesPath, $(file)) -v $(file);)
