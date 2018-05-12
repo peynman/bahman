@@ -13,7 +13,7 @@ var (
 )
 
 func Initialize()  {
-	/* load channel plugins */
+	/* load channel app */
 	modules := app.InitAvalanchePlugins(app.ModulesPath("channels"))
 	for _, module := range modules {
 		logChannel := module.Interface().(interfaces.LoggingChannel)

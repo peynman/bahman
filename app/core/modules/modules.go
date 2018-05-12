@@ -7,7 +7,7 @@ import (
 )
 
 func Initialize() {
-	modules := app.InitAvalanchePlugins(app.ModulesPath("plugins"))
+	modules := app.InitAvalanchePlugins(app.ModulesPath("app"))
 
 	for _, moduleInterface := range modules {
 		module := moduleInterface.Interface().(interfaces.Module)

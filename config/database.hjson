@@ -12,19 +12,20 @@
                 maxIdleConnections: 10,
                 maxOpenConnections: 10,
                 maxConnectionLifetime: time(Hour),
+                prefix: "",
             },
         },
         sqlite3: {
             driver: "sqlite3",
             file: storage("db/database.db"),
             options: {
-                engine: "innoDB",
-                max_idle_connections: 10,
-                max_open_connections: 10,
-                max_connection_lifetime: time(Hour),
+                maxIdleConnections: 10,
+                maxOpenConnections: 10,
+                maxConnectionLifetime: time(hour),
+                prefix: "",
             },
         },
     },
 
-
+    migrations: "migrations",
 }

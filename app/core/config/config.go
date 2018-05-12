@@ -12,9 +12,14 @@ func Initialize() {
 		new (StoragePathEvaluator),
 		new (ResourcesPathEvaluator),
 		new (RootPathEvaluator),
+		new (SystemParameterEvaluator),
+		new (TimeEvaluator),
 	})
 }
 
+func  IsSet(key string) bool {
+	return config.IsSet(key)
+}
 func  Get(key string, def interface{}) interface{} {
 	return config.Get(key, def)
 }

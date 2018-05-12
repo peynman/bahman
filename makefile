@@ -7,7 +7,7 @@ DEBUG=1
 
 ##### METHODS
 define getAppModulesPath
-$(MODULES_PATH)/plugins/$(basename $(notdir $(1))).so
+$(MODULES_PATH)/app/$(basename $(notdir $(1))).so
 endef
 define getCliModulesPath
 $(MODULES_PATH)/console/$(basename $(notdir $(1))).so
@@ -53,6 +53,7 @@ LDFLAGS=-ldflags "-X $(PACKAGE).Version=$(VERSION) -X $(PACKAGE).Code=$(BUILD_CO
 all: test modules build
 build_n_serve: modules build serve
 build: build_cli build_server
+server_n_serve: build_server_only serve
 build_cli: build_cli_only cli_modules app_modules
 build_server: build_server_only logger_modules app_modules
 modules: logger_modules cli_modules app_modules

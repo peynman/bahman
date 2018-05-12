@@ -1,6 +1,7 @@
 package interfaces
 
 type Migrator interface {
+	
 }
 
 type Migratable interface {
