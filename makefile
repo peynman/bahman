@@ -60,9 +60,9 @@ PACKAGE=avalanche/app/core/app
 LDFLAGS=-ldflags "-X $(PACKAGE).Version=$(VERSION) -X $(PACKAGE).Code=$(BUILD_CODE) -X $(PACKAGE).Variant=$(VARIANT) -X $(PACKAGE).Platform=$(PLATFORM) -X $(PACKAGE).BuildTime=$(BUILD_TIME)"
 
 #### SCRIPTS
-all: test modules build
-build_n_serve: modules build serve
-build: build_cli build_server
+all: build test
+build_n_serve: build serve
+build: modules build_cli_only build_server_only
 server_n_serve: build_server_only serve
 build_cli: build_cli_only cli_modules app_modules
 build_server: build_server_only logger_modules app_modules
@@ -89,3 +89,6 @@ app_modules:
 	$(foreach file, $(APP_MODULES), $(GOBUILD) -buildmode=plugin -o $(call getAppModulesPath, $(file)) -v $(file);)
 go_get:
 	@($(foreach dep, $(DEPENDENCIES), $(GOGET) $(dep);))
+sample_env:
+	touch .env
+	touch .env.test

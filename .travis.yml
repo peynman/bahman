@@ -1,13 +1,14 @@
 language: go
   go:
-    - "1.10"
-
+    - "1.10.2"
+    - tip
 sudo: false
 
 before_script:
   make deps
 
 install:
+  make sample_env
   make build
 
 script:
