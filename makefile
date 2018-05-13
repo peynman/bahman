@@ -5,6 +5,16 @@
 ##### CONFIG BUILD
 DEBUG=1
 
+##### DEPENDENCIES
+DEPENDENCIES=\
+ github.com/joho/godotenv \
+ github.com/hjson/hjson-go \
+ github.com/rivo/tview \
+ github.com/jinzhu/gorm \
+ github.com/sirupsen/logrus \
+ github.com/uniplaces/carbon \
+ github.com/nicksnyder/go-i18n/goi18n \
+
 ##### METHODS
 define getAppModulesPath
 $(MODULES_PATH)/app/$(basename $(notdir $(1))).so
@@ -77,3 +87,5 @@ cli_modules:
 	$(foreach file, $(CLI_MODULES), $(GOBUILD) -buildmode=plugin -o $(call getCliModulesPath, $(file)) -v $(file);)
 app_modules:
 	$(foreach file, $(APP_MODULES), $(GOBUILD) -buildmode=plugin -o $(call getAppModulesPath, $(file)) -v $(file);)
+go_get:
+	@($(foreach dep, $(DEPENDENCIES), $(GOGET) $(dep);))

@@ -77,7 +77,6 @@ func (m *MigrationManager) Rollback(connection *gorm.DB, migratables []interface
 }
 
 func (m *MigrationManager) Reset(connection *gorm.DB) {
-
 }
 
 func getMigration(migrations []*Migration, migratable interfaces.Migratable) *Migration {
