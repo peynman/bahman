@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"avalanche/app/core/app"
-	"avalanche/app/core/interfaces"
+	"github.com/peyman-abdi/avalanche/app/core/app"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
 )
 
 type SamplePlugin struct {

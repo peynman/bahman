@@ -1,7 +1,7 @@
 package user_management
 
 import (
-	"avalanche/app/core/interfaces"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
 )
 
 type UsersTable struct {

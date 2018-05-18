@@ -1,48 +1,89 @@
 package database
 
 import (
-	"time"
 	"github.com/jinzhu/gorm"
 	"reflect"
-	"avalanche/app/core/interfaces"
-	"strings"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
 )
 
-type Migration struct {
-	ID int64
-	Step int
-	Interface string `gorm:"size:192,unique_index"`
-	CreatedAt *time.Time
-}
 type MigrationManager struct {
-	tableName string
+	migrationsTableName string
+	connection *gorm.DB
 }
 
-func (m *MigrationManager) Setup(connection *gorm.DB) {
-	if !connection.HasTable(&Migration{}) {
-		connection.AutoMigrate(&Migration{})
+func (m *MigrationManager) AutoMigrate(table... interface{}) error {
+	m.connection.AutoMigrate(table)
+	return nil
+}
+
+func (m *MigrationManager) CreateTable(table... interface{}) error {
+	m.connection.CreateTable(table)
+	return nil
+}
+
+func (m *MigrationManager) DropTable(table... interface{}) error {
+	m.connection.DropTable(table)
+	return nil
+}
+
+func (m *MigrationManager) DropTableIfExists(table... interface{}) error {
+	m.connection.DropTableIfExists(table)
+	return nil
+}
+
+func (m *MigrationManager) DropColumn(column string) error {
+	m.connection.DropColumn(column)
+	return nil
+}
+
+func (m *MigrationManager) Migrate(migrates []interfaces.Migratable) error {
+	m.migrate(m.connection, migrates)
+	return nil
+}
+
+func (m *MigrationManager) Rollback(migrates []interfaces.Migratable) error {
+	m.rollback(m.connection, migrates)
+	return nil
+}
+
+func (m *MigrationManager) Connection(connection string) interfaces.Migrator {
+	conn := connections[connection]
+	if conn == nil {
+		conn = appConnection
+	}
+
+	n := &MigrationManager {
+		migrationsTableName: m.migrationsTableName,
+		connection: connections[connection],
+	}
+	return n
+}
+
+func (m *MigrationManager) setup(connection *gorm.DB) {
+	if !connection.HasTable(&MigrationModel{}) {
+		connection.AutoMigrate(&MigrationModel{})
 	}
 }
 
-func (m *MigrationManager) Migrate(connection *gorm.DB, migratables []interfaces.Migratable) {
-	var migrations []*Migration
+func (m *MigrationManager) migrate(connection *gorm.DB, migrates []interfaces.Migratable) {
+	var migrations []*MigrationModel
 	var migratableInterfaces []string
 
-	for _, migratable := range migratables {
+	for _, migratable := range migrates {
 		migratableInterfaces = append(migratableInterfaces, reflect.TypeOf(migratable).String())
 	}
 
-	query := "interface IN (`" + strings.Join(migratableInterfaces, "`,`") + "`"
-	connection.Find(&migrations).Where(query)
+	repo := repoManager.Query(&MigrationModel{})
 
-	row := connection.Raw("SELECT max(step) FROM migrations").Row()
+	repo.Where("interface IN (?)", migratableInterfaces).Get(&migrations)
+
 	var maxStep int
- 	row.Scan(&maxStep)
+	repo.Select("max(step)").Get(&maxStep)
 
-	for index, migratable := range migratables {
+	for index, migratable := range migrates {
 		if migration := getMigration(migrations, migratable); migration == nil {
 			if migratable.Up(m) {
-				migration = &Migration{
+				migration = &MigrationModel{
 					Step: maxStep + 1,
 					Interface: migratableInterfaces[index],
 				}
@@ -52,22 +93,22 @@ func (m *MigrationManager) Migrate(connection *gorm.DB, migratables []interfaces
 	}
 }
 
-func (m *MigrationManager) Rollback(connection *gorm.DB, migratables []interfaces.Migratable) {
-	var migrations []*Migration
+func (m *MigrationManager) rollback(connection *gorm.DB, migrates []interfaces.Migratable) {
+	var migrations []*MigrationModel
 	var migratableInterfaces []string
 
-	for _, migratable := range migratables {
+	for _, migratable := range migrates {
 		migratableInterfaces = append(migratableInterfaces, reflect.TypeOf(migratable).String())
 	}
 
-	query := "interface IN (`" + strings.Join(migratableInterfaces, "`,`") + "`"
-	connection.Find(&migrations).Where(query)
+	repo := repoManager.Query(&MigrationModel{})
 
-	row := connection.Raw("SELECT max(step) FROM migrations").Row()
+	repo.Where("interface IN (?)", migratableInterfaces).Get(&migrations)
+
 	var maxStep int
-	row.Scan(&maxStep)
+	repo.Select("max(step)").Get(&maxStep)
 
-	for _, migratable := range migratables {
+	for _, migratable := range migrates {
 		if migration := getMigration(migrations, migratable); migration == nil {
 			if migratable.Down(m) {
 				connection.Delete(migration)
@@ -76,10 +117,7 @@ func (m *MigrationManager) Rollback(connection *gorm.DB, migratables []interface
 	}
 }
 
-func (m *MigrationManager) Reset(connection *gorm.DB) {
-}
-
-func getMigration(migrations []*Migration, migratable interfaces.Migratable) *Migration {
+func getMigration(migrations []*MigrationModel, migratable interfaces.Migratable) *MigrationModel {
 	interfaceName := reflect.TypeOf(migratable).String()
 	for _, migration := range migrations {
 		if migration.Interface == interfaceName {
@@ -88,4 +126,6 @@ func getMigration(migrations []*Migration, migratable interfaces.Migratable) *Mi
 	}
 	return nil
 }
+
+
 

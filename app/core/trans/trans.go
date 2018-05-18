@@ -4,42 +4,45 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 	"github.com/hjson/hjson-go"
-	"avalanche/app/core/config"
-	"peyman/config"
-	"avalanche/app/core/logger"
-	"github.com/sirupsen/logrus"
-	"avalanche/app/core/app"
+	"github.com/peyman-abdi/conf"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
 )
 
-var bundle *i18n.Bundle
-var localize *i18n.Localizer
+type localImpl struct {
+	bundle *i18n.Bundle
+	localize *i18n.Localizer
+	logger interfaces.Logger
+}
 
-func Initialize() {
-	bundle = &i18n.Bundle {
+func Initialize(config interfaces.Config, app interfaces.Application, logger interfaces.Logger) interfaces.Localization {
+	trans := new(localImpl)
+	trans.bundle = &i18n.Bundle {
 		DefaultLanguage:language.English,
 	}
-	bundle.RegisterUnmarshalFunc("hjson", hjson.Unmarshal)
+	trans.bundle.RegisterUnmarshalFunc("hjson", hjson.Unmarshal)
+	trans.logger = logger
 
 	locale := config.GetString("core.locale", "en")
 	langFilesPath := app.ResourcesPath("lang/" + locale)
-	transMessages := nemo.New(langFilesPath, "", nil)
-	iterateMapForMessages(getLanguageTagFromString(locale), bundle, transMessages.ConfigsMap, "")
+	transMessages, _ := conf.New(langFilesPath, "", nil)
+	iterateMapForMessages(getLanguageTagFromString(locale), trans.bundle, transMessages.ConfigsMap, "")
 
-	localize = i18n.NewLocalizer(bundle, locale)
+	trans.localize = i18n.NewLocalizer(trans.bundle, locale)
+	return trans
 }
 
-func L(key string) string {
-	return LP(key, nil)
+func (t *localImpl) L(key string) string {
+	return t.LP(key, nil)
 }
 
-func LP(key string, params map[string]string) string {
-	localized, err := localize.Localize(&i18n.LocalizeConfig{
+func (t *localImpl) LP(key string, params map[string]string) string {
+	localized, err := t.localize.Localize(&i18n.LocalizeConfig{
 		MessageID: key,
 		TemplateData: params,
 	})
 
 	if err != nil {
-		logger.ErrorFields("Localize failed", logrus.Fields {
+		t.logger.ErrorFields("Localize failed", map[string]interface{} {
 			"error": err,
 			"key": key,
 			"params": params,

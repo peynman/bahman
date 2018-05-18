@@ -2,110 +2,116 @@ package logger
 
 import (
 	"github.com/sirupsen/logrus"
-	"avalanche/app/core/interfaces"
-	"avalanche/app/core/app"
-	"avalanche/app/core/config"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
 )
 
-var (
+type loggerImpl struct {
 	loggers []*logrus.Logger
-	channels = make(map[string]interfaces.LoggingChannel)
-)
+	channels map[string]interfaces.LoggingChannel
+}
 
-func Initialize()  {
+func Initialize() interfaces.Logger  {
+	log := new(loggerImpl)
+	log.channels = make(map[string]interfaces.LoggingChannel)
+	return log
+}
+
+func (l *loggerImpl) LoadChannels(services interfaces.Services) {
+	app := services.App()
+	config := services.Config()
 	/* load channel app */
-	modules := app.InitAvalanchePlugins(app.ModulesPath("channels"))
+	modules := app.InitAvalanchePlugins(app.ModulesPath("channels"), services)
 	for _, module := range modules {
 		logChannel := module.Interface().(interfaces.LoggingChannel)
-		channels[logChannel.GetChannelName()] = logChannel
+		l.channels[logChannel.GetChannelName()] = logChannel
 	}
 
 	/* setup channel drivers */
 	logDrivers := config.GetStringArray("logging.hooks", []string{"console"})
 	for _, driverName := range logDrivers {
-		driver := channels[driverName]
+		driver := l.channels[driverName]
 		if driver == nil {
 			panic("Driver with name " + driver.GetChannelName() + " not found in log channels")
 		}
 		if driver.Config("logging.channels." + driver.GetChannelName()) {
-			loggers = append(loggers, driver.GetLogger())
+			l.loggers = append(l.loggers, driver.GetLogger())
 		}
 	}
 }
 
-func log(level string, message string, fields logrus.Fields)  {
+func (l *loggerImpl) log(level string, message string, fields map[string]interface{})  {
 	switch level {
 	case "debug":
-		for _, logger := range loggers  {
+		for _, logger := range l.loggers  {
 			logger.WithFields(fields).Debug(message)
 		}
 	case "info":
-		for _, logger := range loggers  {
+		for _, logger := range l.loggers  {
 			logger.WithFields(fields).Info(message)
 		}
 	case "warn":
-		for _, logger := range loggers  {
+		for _, logger := range l.loggers  {
 			logger.WithFields(fields).Warn(message)
 		}
 	case "error":
-		for _, logger := range loggers  {
+		for _, logger := range l.loggers  {
 			logger.WithFields(fields).Error(message)
 		}
 	case "fatal":
-		for _, logger := range loggers  {
+		for _, logger := range l.loggers  {
 			logger.WithFields(fields).Fatal(message)
 		}
 	case "panic":
-		for _, logger := range loggers  {
+		for _, logger := range l.loggers  {
 			logger.WithFields(fields).Panic(message)
 		}
 	}
 }
 
-func Debug(message string) {
-	log("debug", message, nil)
+func (l *loggerImpl) Debug(message string) {
+	l.log("debug", message, nil)
 }
 
-func Info(message string) {
-	log("info", message, nil)
+func (l *loggerImpl) Info(message string) {
+	l.log("info", message, nil)
 }
 
-func Warn(message string) {
-	log("warn", message, nil)
+func (l *loggerImpl) Warn(message string) {
+	l.log("warn", message, nil)
 }
 
-func Error(message string) {
-	log("error", message, nil)
+func (l *loggerImpl) Error(message string) {
+	l.log("error", message, nil)
 }
 
-func Fatal(message string) {
-	log("fatal", message, nil)
+func (l *loggerImpl) Fatal(message string) {
+	l.log("fatal", message, nil)
 }
 
-func Panic(message string) {
-	log("panic", message, nil)
+func (l *loggerImpl) Panic(message string) {
+	l.log("panic", message, nil)
 }
 
-func DebugFields(message string, fields logrus.Fields) {
-	log("debug", message, fields)
+func (l *loggerImpl) DebugFields(message string, fields map[string]interface{}) {
+	l.log("debug", message, fields)
 }
 
-func InfoFields(message string, fields logrus.Fields) {
-	log("info", message, fields)
+func (l *loggerImpl) InfoFields(message string, fields map[string]interface{}) {
+	l.log("info", message, fields)
 }
 
-func WarnFields(message string, fields logrus.Fields) {
-	log("warn", message, fields)
+func (l *loggerImpl) WarnFields(message string, fields map[string]interface{}) {
+	l.log("warn", message, fields)
 }
 
-func ErrorFields(message string, fields logrus.Fields) {
-	log("error", message, fields)
+func (l *loggerImpl) ErrorFields(message string, fields map[string]interface{}) {
+	l.log("error", message, fields)
 }
 
-func FatalFields(message string, fields logrus.Fields) {
-	log("fatal", message, fields)
+func (l *loggerImpl) FatalFields(message string, fields map[string]interface{}) {
+	l.log("fatal", message, fields)
 }
 
-func PanicFields(message string, fields logrus.Fields) {
-	log("panic", message, fields)
+func (l *loggerImpl) PanicFields(message string, fields map[string]interface{}) {
+	l.log("panic", message, fields)
 }

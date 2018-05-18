@@ -1,9 +1,9 @@
 package main
 
 import (
-	"avalanche/app/core/app"
-	"avalanche/app/core/interfaces"
-	"avalanche/app/modules/user-management"
+	"github.com/peyman-abdi/avalanche/app/core/app"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
+	"github.com/peyman-abdi/avalanche/app/modules/user-management"
 )
 
 type UserManagementPlugin struct {
@@ -23,8 +23,9 @@ func (_ *UserManagementPlugin) Title() string {
 func (_ *UserManagementPlugin) Description() string {
 	return "Default User-Management system"
 }
-func (_ *UserManagementPlugin) Initialize() bool {
+func (_ *UserManagementPlugin) Initialize(services interfaces.Services) bool {
 	userManagementModule = new(UserManagementModule)
+	userManagementModule.services = services
 	return true
 }
 func (_ *UserManagementPlugin) Interface() interface{} {
@@ -33,6 +34,7 @@ func (_ *UserManagementPlugin) Interface() interface{} {
 var PluginInstance interfaces.AvalanchePlugin = new(UserManagementPlugin)
 
 type UserManagementModule struct {
+	services interfaces.Services
 }
 var userManagementModule *UserManagementModule
 var _ interfaces.Module = (*UserManagementModule)(nil)
@@ -41,4 +43,14 @@ func (_ *UserManagementModule) Migrations() []interfaces.Migratable {
 	return []interfaces.Migratable {
 		new(user_management.UsersTable),
 	}
+}
+func (u *UserManagementModule) Installed() bool {
+	return true
+}
+func (u *UserManagementModule) Activated() bool {
+	return true
+}
+func (u *UserManagementModule) Deactivated() {
+}
+func (u *UserManagementModule) Purged() {
 }

@@ -3,12 +3,10 @@ package app
 import (
 	"os"
 	"path/filepath"
-	"avalanche/app/core/interfaces"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
 	"strings"
 	"plugin"
 )
-
-var appRoot string
 
 var (
 	Version string
@@ -19,36 +17,64 @@ var (
 	BuildTime string
 )
 
-func init() {
+type appImpl struct {
+	appRoot string
+}
+
+func Initialize() interfaces.Application {
 	root, err := os.Executable()
 	if err != nil {
 		panic(err)
 	}
 
-	appRoot = filepath.Dir(root) + "/../../../../"
+	app := &appImpl{
+		appRoot: filepath.Dir(root) + "/../../../../",
+	}
+
+	return app
 }
 
-func StoragePath(path string) string {
-	return filepath.Join(appRoot, "storage", path)
+func (a *appImpl) Version() string {
+	return Version
+}
+func (a *appImpl) Build() string {
+	return Code
+}
+func (a *appImpl) BuildCode() int {
+	return VersionCode
+}
+func (a *appImpl) Platform() string {
+	return Platform
+}
+func (a *appImpl) Variant() string {
+	return Variant
+}
+func (a *appImpl) BuildTime() string {
+	return BuildTime
 }
 
-func ConfigPath(path string) string {
-	return filepath.Join(appRoot, "config", path)
+
+func (a *appImpl) StoragePath(path string) string {
+	return filepath.Join(a.appRoot, "storage", path)
 }
 
-func RootPath(path string) string {
-	return filepath.Join(appRoot, path)
+func (a *appImpl) ConfigPath(path string) string {
+	return filepath.Join(a.appRoot, "config", path)
 }
 
-func ModulesPath(path string) string {
-	return filepath.Join(appRoot, "bin/platforms/", Platform, Variant, "modules", path)
+func (a *appImpl) RootPath(path string) string {
+	return filepath.Join(a.appRoot, path)
 }
 
-func ResourcesPath(path string) string {
-	return filepath.Join(appRoot, "resources", path)
+func (a *appImpl) ModulesPath(path string) string {
+	return filepath.Join(a.appRoot, "bin/platforms/", Platform, Variant, "modules", path)
 }
 
-func InitAvalanchePlugins(path string) []interfaces.AvalanchePlugin {
+func (a *appImpl) ResourcesPath(path string) string {
+	return filepath.Join(a.appRoot, "resources", path)
+}
+
+func (a *appImpl) InitAvalanchePlugins(path string, services interfaces.Services) []interfaces.AvalanchePlugin {
 	var moduleFiles []string
 	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		moduleFiles = append(moduleFiles, path)
@@ -77,7 +103,7 @@ func InitAvalanchePlugins(path string) []interfaces.AvalanchePlugin {
 			panic("Plugin at path: " + moduleFile + " cannot run with this version of avalanche")
 		}
 
-		if pluginInstance.Initialize() {
+		if pluginInstance.Initialize(services) {
 			modules = append(modules, pluginInstance)
 		}
 	}

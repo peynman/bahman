@@ -1,63 +1,80 @@
 package config
 
 import (
-	gConfig "peyman/config"
-	"avalanche/app/core/app"
+	gConfig "github.com/peyman-abdi/conf"
+	"github.com/peyman-abdi/avalanche/app/core/app"
 	"time"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
 )
 
 /**
 	Storage Path: storage(path)
  */
 type StoragePathEvaluator struct {
+	app interfaces.Application
 }
-func (_ *StoragePathEvaluator) GetFunctionName() string {
+func (r *StoragePathEvaluator) GetFunctionName() string {
 	return "storage"
 }
-func (_ *StoragePathEvaluator) Eval(params []string, def interface{}) interface{} {
+func (r *StoragePathEvaluator) Eval(params []string, def interface{}) interface{} {
 	if len(params) > 0 {
-		return app.StoragePath(params[0])
+		return r.app.StoragePath(params[0])
 	} else {
-		return app.StoragePath("")
+		return r.app.StoragePath("")
 	}
 }
 var _ gConfig.EvaluatorFunction = (*StoragePathEvaluator)(nil)
-
+func NewStoragePathEvaluator(app interfaces.Application) *StoragePathEvaluator {
+	return &StoragePathEvaluator{
+		app: app,
+	}
+}
 
 /**
 	Resource Path: resource(path)
  */
 type ResourcesPathEvaluator struct {
+	app interfaces.Application
 }
-func (_ *ResourcesPathEvaluator) GetFunctionName() string {
+func (r *ResourcesPathEvaluator) GetFunctionName() string {
 	return "resources"
 }
-func (_ *ResourcesPathEvaluator) Eval(params []string, def interface{}) interface{} {
+func (r *ResourcesPathEvaluator) Eval(params []string, def interface{}) interface{} {
 	if len(params) > 0 {
-		return app.ResourcesPath(params[0])
+		return r.app.ResourcesPath(params[0])
 	} else {
-		return app.ResourcesPath("")
+		return r.app.ResourcesPath("")
 	}
 }
 var _ gConfig.EvaluatorFunction = (*ResourcesPathEvaluator)(nil)
-
+func NewResourcesPathEvaluator(app interfaces.Application) *ResourcesPathEvaluator {
+	return &ResourcesPathEvaluator{
+		app: app,
+	}
+}
 
 /**
 	Root Path: root(path)
  */
 type RootPathEvaluator struct {
+	app interfaces.Application
 }
-func (_ *RootPathEvaluator) GetFunctionName() string {
+func (r *RootPathEvaluator) GetFunctionName() string {
 	return "root"
 }
-func (_ *RootPathEvaluator) Eval(params []string, def interface{}) interface{} {
+func (r *RootPathEvaluator) Eval(params []string, def interface{}) interface{} {
 	if len(params) > 0 {
-		return app.RootPath(params[0])
+		return r.app.RootPath(params[0])
 	} else {
-		return app.RootPath("")
+		return r.app.RootPath("")
 	}
 }
 var _ gConfig.EvaluatorFunction = (*RootPathEvaluator)(nil)
+func NewRootPathEvaluator(app interfaces.Application) *RootPathEvaluator {
+	return &RootPathEvaluator{
+		app: app,
+	}
+}
 
 
 /**
@@ -65,10 +82,10 @@ var _ gConfig.EvaluatorFunction = (*RootPathEvaluator)(nil)
  */
 type SystemParameterEvaluator struct {
 }
-func (_ *SystemParameterEvaluator) GetFunctionName() string {
+func (s *SystemParameterEvaluator) GetFunctionName() string {
 	return "system"
 }
-func (_ *SystemParameterEvaluator) Eval(params []string, def interface{}) interface{} {
+func (s *SystemParameterEvaluator) Eval(params []string, def interface{}) interface{} {
 	if len(params) > 0 {
 		switch params[0] {
 		case "os":
@@ -90,10 +107,10 @@ var _ gConfig.EvaluatorFunction = (*SystemParameterEvaluator)(nil)
  */
 type TimeEvaluator struct {
 }
-func (_ *TimeEvaluator) GetFunctionName() string {
+func (t *TimeEvaluator) GetFunctionName() string {
 	return "time"
 }
-func (_ *TimeEvaluator) Eval(params []string, def interface{}) interface{} {
+func (t *TimeEvaluator) Eval(params []string, def interface{}) interface{} {
 	if len(params) > 0 {
 		switch params[0] {
 		case "hour":

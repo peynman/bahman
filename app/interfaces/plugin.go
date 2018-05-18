@@ -6,6 +6,6 @@ type AvalanchePlugin interface {
 	AvalancheVersionCode() int
 	Title() string
 	Description() string
-	Initialize() bool
+	Initialize(services Services) bool
 	Interface() interface{}
 }

@@ -1,31 +1,37 @@
 package main
 
 import (
-	"avalanche/app/core/logger"
-	"avalanche/app/core/database"
+	"github.com/peyman-abdi/avalanche/app/core/logger"
+	"github.com/peyman-abdi/avalanche/app/core/database"
 	"github.com/sirupsen/logrus"
-	"avalanche/app/core/config"
-	"avalanche/app/core/app"
-	"avalanche/app/core/trans"
-	"avalanche/app/core/modules"
+	"github.com/peyman-abdi/avalanche/app/core/config"
+	"github.com/peyman-abdi/avalanche/app/core/app"
+	"github.com/peyman-abdi/avalanche/app/core/trans"
+	"github.com/peyman-abdi/avalanche/app/core/modules"
+	"github.com/peyman-abdi/avalanche/app/core"
 )
 
 func main() {
-
-	config.Initialize()
-	logger.Initialize()
-	database.Initialize()
+	application := app.Initialize()
+	appConfig := config.Initialize(application)
+	appLogger := logger.Initialize()
+	repo, migrator := database.Initialize(appConfig)
 	defer database.Close()
-	trans.Initialize()
+	localizations := trans.Initialize(appConfig, application, appLogger)
 
-	modules.Initialize()
+	mm := modules.Initialize(appConfig)
 
-	logger.InfoFields("Avalanche Server", logrus.Fields{
-		"version":  app.Version,
-		"code":     app.Code,
-		"platform": app.Platform,
-		"variant":  app.Variant,
-		"time":     app.BuildTime,
+	s := core.Initialize(application, appConfig, appLogger, repo, migrator, localizations, mm)
+
+	appLogger.LoadChannels(s)
+	mm.LoadModules(s)
+
+	appLogger.InfoFields("Avalanche Server", logrus.Fields{
+		"Version":   application.Version(),
+		"BuildCode": application.BuildCode(),
+		"Platform":  application.Platform(),
+		"Variant":   application.Variant(),
+		"BuildTime": application.BuildTime(),
 	})
 }
 

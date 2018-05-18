@@ -2,70 +2,87 @@ package database
 
 import (
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/mattn/go-sqlite3"
-	_ "github.com/lib/pq/hstore"
-	_ "github.com/lib/pq"
-	_ "github.com/go-sql-driver/mysql"
-	"avalanche/app/core/config"
 	"time"
-	"avalanche/app/core/interfaces"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
 )
 
-var DefaultConnection *gorm.DB
-var MigrationsManager *MigrationManager
-var Connections = make(map[string]*gorm.DB)
-var ConnectionPrefix = make(map[*gorm.DB]string)
+var (
+	appConnection     *gorm.DB
+	runtimeConnection *gorm.DB
+	connections       = make(map[string]*gorm.DB)
+	connectionPrefix  = make(map[*gorm.DB]string)
 
-func Initialize() {
-	defaultConnectionName := config.GetString("database.default", "")
+	migrationsManager *MigrationManager
+
+	migrator    interfaces.Migrator
+	repoManager *RepositoryManager
+)
+
+func Initialize(config interfaces.Config) (interfaces.Repository, interfaces.Migrator) {
+	appConnectionName := config.GetString("database.app", "sqlite3")
+	runtimeConnectionName := config.GetString("database.runtime.connection", "sqlite3")
 
 	gorm.LogFormatter = func(values ...interface{}) (messages []interface{}) {
 		return values
 	}
 
-	connections := config.GetMap("database.connections", map[string]interface{} {})
-	for connName, connParams := range connections {
+	connectionDefs := config.GetMap("database.connections", map[string]interface{} {})
+	for connName, connParams := range connectionDefs {
 		connMap := connParams.(map[string]interface{})
-		if connName == defaultConnectionName {
-			DefaultConnection = initDatabase("database.connections." + connName)
-		} else if connMap["active"] == true {
-			Connections[connName] = initDatabase("database.connections." + connName)
+		var connection *gorm.DB = nil
+		if connName == appConnectionName || connName == runtimeConnectionName {
+			connection = initDatabase(config, "database.connections." + connName)
+			if connName == appConnectionName {
+				appConnection = connection
+				connections["app"] = connection
+			}
+			if connName == runtimeConnectionName {
+				runtimeConnection = connection
+				connections["runtime"] = connection
+			}
+		}
+
+		if connMap["active"] == true {
+			if connection == nil {
+				connection = initDatabase(config, "database.connections." + connName)
+			}
+
+			connections[connName] = connection
 		}
 	}
 
 	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-		if prefix, ok := ConnectionPrefix[db]; ok {
+		if prefix, ok := connectionPrefix[db]; ok {
 			return prefix + defaultTableName
 		}
 		return defaultTableName
 	}
 
-	MigrationsManager = new(MigrationManager)
-	MigrationsManager.tableName = config.GetString("database.migrations", "migrations")
+	repoManager = new (RepositoryManager)
 
-	MigrationsManager.Setup(DefaultConnection)
+	migrationsManager = new(MigrationManager)
+	migrationsManager.migrationsTableName = config.GetString("database.runtime.migrations", "migrations")
+
+	migrator = migrationsManager.Connection("app")
+
+	migrationsManager.setup(runtimeConnection)
+
+	return repoManager, migrator
 }
-
-func DeployModule(module interfaces.Module) {
-	MigrationsManager.Migrate(DefaultConnection, module.Migrations())
-}
-
 func Close() {
-	DefaultConnection.Close()
+	appConnection.Close()
 }
 
-func initDatabase(keyPrefix string) *gorm.DB {
+func initDatabase(config interfaces.Config, keyPrefix string) *gorm.DB {
 	var connection *gorm.DB
 	if 	connectionDriver := config.GetString(keyPrefix + ".driver", "");
 		connectionDriver != "" {
 		switch connectionDriver {
 		case "mysql":
-			connection = openMySQL(keyPrefix)
+			connection = openMySQL(config, keyPrefix)
 		case "sqlite3":
-			connection = openSqlite3(keyPrefix)
+			connection = openSqlite3(config, keyPrefix)
 		}
 	} else {
 		panic("Unknown database connection: " + keyPrefix)
@@ -82,7 +99,7 @@ func initDatabase(keyPrefix string) *gorm.DB {
 		connection.DB().SetConnMaxLifetime(maxConnectionLifetime)
 
 		if config.IsSet(keyPrefix + ".options.prefix") {
-			ConnectionPrefix[connection] = config.GetString(keyPrefix + ".options.prefix", "")
+			connectionPrefix[connection] = config.GetString(keyPrefix + ".options.prefix", "")
 		}
 	} else {
 		connection.DB().SetMaxIdleConns(1)
@@ -97,7 +114,7 @@ func initDatabase(keyPrefix string) *gorm.DB {
 	return connection
 }
 
-func openSqlite3(configPath string) *gorm.DB {
+func openSqlite3(config interfaces.Config, configPath string) *gorm.DB {
 	db, err := gorm.Open("sqlite3", config.GetString(configPath + ".file", ""))
 	if err != nil {
 		panic(err)
@@ -105,10 +122,10 @@ func openSqlite3(configPath string) *gorm.DB {
 	return db
 }
 
-func openMySQL(configPath string) *gorm.DB {
+func openMySQL(config interfaces.Config, configPath string) *gorm.DB {
 
 	//engine := config.GetString(keyPrefix + ".options.engine", "InnoDB")
-	//connection = DefaultConnection.Set("gorm:table_options", "ENGINE=" + engine)
+	//connection = appConnection.Set("gorm:table_options", "ENGINE=" + engine)
 	return nil
 }
 

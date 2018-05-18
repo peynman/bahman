@@ -2,9 +2,8 @@ package main
 
 import (
 	"github.com/sirupsen/logrus"
-	"avalanche/app/core/interfaces"
-	"avalanche/app/core/config"
-	"avalanche/app/core/app"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
+	"github.com/peyman-abdi/avalanche/app/core/app"
 )
 
 type AvalanchePluginConsole struct {
@@ -24,8 +23,9 @@ func (_ *AvalanchePluginConsole) Title() string {
 func (_ *AvalanchePluginConsole) Description() string {
 	return "Console driver for Avalanche logger"
 }
-func (_ *AvalanchePluginConsole) Initialize() bool {
+func (_ *AvalanchePluginConsole) Initialize(services interfaces.Services) bool {
 	consoleLogger = new(ConsoleLogChannel)
+	consoleLogger.services = services
 	return true
 }
 func (_ *AvalanchePluginConsole) Interface() interface{} {
@@ -34,6 +34,7 @@ func (_ *AvalanchePluginConsole) Interface() interface{} {
 var PluginInstance interfaces.AvalanchePlugin = new(AvalanchePluginConsole)
 
 type ConsoleLogChannel struct {
+	services interfaces.Services
 	logger *logrus.Logger
 }
 var _ interfaces.LoggingChannel = (*ConsoleLogChannel)(nil)
@@ -42,12 +43,12 @@ var consoleLogger *ConsoleLogChannel
 func (logger *ConsoleLogChannel) Config(conf_path string) bool {
 	consoleLogger.logger = logrus.New()
 
-	switch config.GetString(conf_path + ".format", "text") {
+	switch logger.services.Config().GetString(conf_path + ".format", "text") {
 	case "json":
 		consoleLogger.logger.Formatter = new(logrus.JSONFormatter)
 	}
 
-	setLoggerLevel(consoleLogger.logger, config.GetString(conf_path + ".level", "debug"))
+	setLoggerLevel(consoleLogger.logger, logger.services.Config().GetString(conf_path + ".level", "debug"))
 
 	return true
 }

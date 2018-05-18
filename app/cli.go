@@ -2,26 +2,38 @@ package main
 
 import (
 	"github.com/rivo/tview"
-	"avalanche/app/core/interfaces"
-	"avalanche/app/core/app"
-	"avalanche/app/core/database"
-	"avalanche/app/core/logger"
+	"github.com/peyman-abdi/avalanche/app/interfaces"
+	"github.com/peyman-abdi/avalanche/app/core/app"
+	"github.com/peyman-abdi/avalanche/app/core/database"
+	"github.com/peyman-abdi/avalanche/app/core/logger"
 	"sort"
 	"github.com/golang-collections/collections/stack"
-	"avalanche/app/core/config"
-	"avalanche/app/core/trans"
+	"github.com/peyman-abdi/avalanche/app/core/config"
+	"github.com/peyman-abdi/avalanche/app/core/trans"
+	"github.com/peyman-abdi/avalanche/app/core/modules"
+	"github.com/peyman-abdi/avalanche/app/core"
 )
 
 func main() {
-	config.Initialize()
-	logger.Initialize()
-	database.Initialize()
+	application := app.Initialize()
+	appConfig := config.Initialize(application)
+	appLogger := logger.Initialize()
+	repo, migrator := database.Initialize(appConfig)
 	defer database.Close()
-	trans.Initialize()
+	localizations := trans.Initialize(appConfig, application, appLogger)
+
+	mm := modules.Initialize(appConfig)
+
+	s := core.Initialize(application, appConfig, appLogger, repo, migrator, localizations, mm)
+
+	appLogger.LoadChannels(s)
+	mm.LoadModules(s)
 
 	consoleApp = new(ConsoleAppImpl)
+	consoleApp.services = s
+
 	consoleApp.SetupWithConfPath("console")
-	
+
 	if err := consoleApp.Run(); err != nil {
 		panic(err)
 	}
@@ -32,6 +44,7 @@ type StackPagePair struct {
 	FullScreen bool
 }
 type ConsoleAppImpl struct {
+	services interfaces.Services
 	app tview.Application
 	pages []interfaces.ConsolePage
 	mainMenu *tview.List
@@ -41,12 +54,30 @@ type ConsoleAppImpl struct {
 var _ interfaces.ConsoleApp = (*ConsoleAppImpl)(nil)
 var consoleApp *ConsoleAppImpl
 
+func (c *ConsoleAppImpl) MakeList(title string, items []interfaces.ListItem) interfaces.ConsoleItem {
+	list := tview.NewList()
+	for _, item := range items {
+		list.AddItem(item.Title, item.Description, item.Shortcut, item.Callback)
+	}
+	list.AddItem("Back", "Return to previous page", 'b', func() {
+		c.Back()
+	})
+	list.AddItem("Main Menu", "Return to main menu", 'r', func() {
+		c.BackToMainMenu()
+	})
+	list.SetBorder(true)
+	list.SetBorderPadding(1, 1, 1, 1)
+	list.SetTitle(title)
+	return list
+}
 func (c *ConsoleAppImpl) Back()  {
 	if c.pageStack.Len() >= 1 {
 		pair := c.pageStack.Pop().(StackPagePair)
 		c.app.SetRoot(pair.Primitive, pair.FullScreen)
+		c.app.SetFocus(pair.Primitive)
 	} else {
 		c.app.SetRoot(c.mainMenu, true)
+		c.app.SetFocus(c.mainMenu)
 	}
 }
 func (c *ConsoleAppImpl) BackToMainMenu()  {
@@ -60,13 +91,16 @@ func (c *ConsoleAppImpl) BackToMainMenu()  {
 func (c *ConsoleAppImpl) Quit()  {
 	c.app.Stop()
 }
-func (c *ConsoleAppImpl) SetPage(primitive tview.Primitive, fullScreen bool) {
-	c.pageStack.Push(StackPagePair{
-		Primitive: primitive,
-		FullScreen: fullScreen,
-	})
-	c.app.SetRoot(primitive, fullScreen)
-	c.app.SetFocus(primitive)
+func (c *ConsoleAppImpl) SetPage(item interfaces.ConsoleItem, fullScreen bool) {
+	primitive, ok := item.(tview.Primitive)
+	if ok {
+		c.pageStack.Push(StackPagePair{
+			Primitive: primitive,
+			FullScreen: fullScreen,
+		})
+		c.app.SetRoot(primitive, fullScreen)
+		c.app.SetFocus(primitive)
+	}
 }
 func (c *ConsoleAppImpl) SetupWithConfPath(confPath string) {
 	c.pageStack = stack.New()
@@ -79,7 +113,7 @@ func (c *ConsoleAppImpl) SetupWithConfPath(confPath string) {
 
 	c.priorities = make(map[int]int)
 
-	modules := app.InitAvalanchePlugins(app.ModulesPath("console"))
+	modules := c.services.App().InitAvalanchePlugins(c.services.App().ModulesPath("console"), c.services)
 	for index, module := range modules {
 		page := module.Interface().(interfaces.ConsolePage)
 		c.pages = append(c.pages, page)

@@ -1,5 +1,10 @@
 {
-    default: "sqlite3",
+    app: "sqlite3_app",
+    runtime: {
+        connection: "sqlite3_runtime",
+        migrations: "migrations"
+    },
+
     connections: {
         mysql: {
             driver: "mysql",
@@ -15,9 +20,20 @@
                 prefix: "",
             },
         },
-        sqlite3: {
+
+        sqlite3_app: {
             driver: "sqlite3",
-            file: storage("db/database.db"),
+            file: storage("db/app.db"),
+            options: {
+                maxIdleConnections: 10,
+                maxOpenConnections: 10,
+                maxConnectionLifetime: time(hour),
+                prefix: "",
+            },
+        },
+        sqlite3_runtime: {
+            driver: "sqlite3",
+            file: storage("db/runtime.db"),
             options: {
                 maxIdleConnections: 10,
                 maxOpenConnections: 10,
@@ -26,6 +42,4 @@
             },
         },
     },
-
-    migrations: "migrations",
 }
