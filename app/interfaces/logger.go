@@ -9,6 +9,7 @@ type LoggingChannel interface {
 }
 
 type Logger interface {
+	LoadConsole()
 	LoadChannels(services Services)
     Debug(message string)
     Info(message string)

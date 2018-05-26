@@ -17,9 +17,11 @@ var (
 
 	migrator    interfaces.Migrator
 	repoManager *RepositoryManager
+	loggerRef	interfaces.Logger
 )
 
-func Initialize(config interfaces.Config) (interfaces.Repository, interfaces.Migrator) {
+func Initialize(config interfaces.Config, logger interfaces.Logger) (interfaces.Repository, interfaces.Migrator) {
+	loggerRef = logger
 	appConnectionName := config.GetString("database.app", "sqlite3")
 	runtimeConnectionName := config.GetString("database.runtime.connection", "sqlite3")
 
@@ -52,6 +54,14 @@ func Initialize(config interfaces.Config) (interfaces.Repository, interfaces.Mig
 		}
 	}
 
+	if config.GetBoolean("app.debug", false) {
+		for _, conn := range connections {
+			conn.LogMode(true)
+		}
+		appConnection.LogMode(true)
+		runtimeConnection.LogMode(true)
+	}
+
 	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
 		if prefix, ok := connectionPrefix[db]; ok {
 			return prefix + defaultTableName
@@ -60,11 +70,13 @@ func Initialize(config interfaces.Config) (interfaces.Repository, interfaces.Mig
 	}
 
 	repoManager = new (RepositoryManager)
+	repoManager.log = logger
 
 	migrationsManager = new(MigrationManager)
 	migrationsManager.migrationsTableName = config.GetString("database.runtime.migrations", "migrations")
+	migrationsManager.log = logger
 
-	migrator = migrationsManager.Connection("app")
+	migrator = migrationsManager.Connection("runtime")
 
 	migrationsManager.setup(runtimeConnection)
 
@@ -115,7 +127,8 @@ func initDatabase(config interfaces.Config, keyPrefix string) *gorm.DB {
 }
 
 func openSqlite3(config interfaces.Config, configPath string) *gorm.DB {
-	db, err := gorm.Open("sqlite3", config.GetString(configPath + ".file", ""))
+	filename := config.GetString(configPath + ".file", "")
+	db, err := gorm.Open("sqlite3", filename)
 	if err != nil {
 		panic(err)
 	}

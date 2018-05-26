@@ -9,4 +9,3 @@ type Services interface {
 	Modules() ModuleManager
 	App() Application
 }
-

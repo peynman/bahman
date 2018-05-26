@@ -1,6 +1,8 @@
 package core
 
-import "github.com/peyman-abdi/avalanche/app/interfaces"
+import (
+	"github.com/peyman-abdi/avalanche/app/interfaces"
+)
 
 type servicesImpl struct {
 	app interfaces.Application
@@ -12,7 +14,9 @@ type servicesImpl struct {
 	mm interfaces.ModuleManager
 }
 
-func Initialize(
+var instance *servicesImpl
+
+func initializeServices(
 	app interfaces.Application,
 	config interfaces.Config,
 	logger interfaces.Logger,
@@ -21,16 +25,17 @@ func Initialize(
 	trans interfaces.Localization,
 	mm interfaces.ModuleManager,
 ) interfaces.Services {
-	services := new(servicesImpl)
-	services.logger = logger
-	services.trans = trans
-	services.config = config
-	services.app = app
-	services.mig = mig
-	services.repo = repo
-	services.mm = mm
+	instance = new(servicesImpl)
 
-	return services
+	instance.logger = logger
+	instance.trans = trans
+	instance.config = config
+	instance.app = app
+	instance.mig = mig
+	instance.repo = repo
+	instance.mm = mm
+
+	return instance
 }
 
 func (s *servicesImpl) Repository() interfaces.Repository { return s.repo }
@@ -40,3 +45,4 @@ func (s *servicesImpl) Config() interfaces.Config { return s.config }
 func (s *servicesImpl) Logger() interfaces.Logger { return s.logger }
 func (s *servicesImpl) Modules() interfaces.ModuleManager { return s.mm }
 func (s *servicesImpl) App() interfaces.Application { return s.app }
+

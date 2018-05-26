@@ -21,14 +21,19 @@ type appImpl struct {
 	appRoot string
 }
 
-func Initialize() interfaces.Application {
+func Initialize(roots int) interfaces.Application {
 	root, err := os.Executable()
 	if err != nil {
 		panic(err)
 	}
 
+	root = filepath.Dir(root)
+	for i := roots; i > 0; i-- {
+		root = filepath.Join(root, "..")
+	}
+
 	app := &appImpl{
-		appRoot: filepath.Dir(root) + "/../../../../",
+		appRoot: root,
 	}
 
 	return app
@@ -98,11 +103,6 @@ func (a *appImpl) InitAvalanchePlugins(path string, services interfaces.Services
 		}
 
 		pluginInstance := *pluginInstanceRef.(*interfaces.AvalanchePlugin)
-
-		if pluginInstance.AvalancheVersionCode() > VersionCode {
-			panic("Plugin at path: " + moduleFile + " cannot run with this version of avalanche")
-		}
-
 		if pluginInstance.Initialize(services) {
 			modules = append(modules, pluginInstance)
 		}

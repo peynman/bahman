@@ -40,7 +40,7 @@ GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 SERVER_ENTRY=app/server.go
-CLI_ENTRY=app/cli.go
+CLI_ENTRY=app/commands/cli.go
 LOGGER_MODULES=$(wildcard ./app/core/logger/*/*.go)
 CLI_MODULES=$(wildcard ./app/commands/*/*.go)
 APP_MODULES=$(wildcard ./app/modules/*/main/*.go)
@@ -64,7 +64,7 @@ all: build test
 build_n_serve: build serve
 build: modules build_cli_only build_server_only
 server_n_serve: build_server_only serve
-build_cli: build_cli_only cli_modules app_modules
+build_cli: build_cli_only cli_modules app_modules logger_modules
 build_server: build_server_only logger_modules app_modules
 modules: logger_modules cli_modules app_modules
 
@@ -73,7 +73,7 @@ build_server_only:
 build_cli_only:
 	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH)/$(basename $(notdir $(CLI_ENTRY))) -v $(CLI_ENTRY)
 test:
-	$(GOTEST) ./...
+	$(GOTEST) $(LDFLAGS) -v -covermode=count -coverprofile=coverage.out ./...
 clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_PATH)

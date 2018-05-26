@@ -1,47 +1,31 @@
 package main
 
 import (
+	"github.com/peyman-abdi/avalanche/app/core"
+	"sort"
 	"github.com/rivo/tview"
 	"github.com/peyman-abdi/avalanche/app/interfaces"
-	"github.com/peyman-abdi/avalanche/app/core/app"
-	"github.com/peyman-abdi/avalanche/app/core/database"
-	"github.com/peyman-abdi/avalanche/app/core/logger"
-	"sort"
 	"github.com/golang-collections/collections/stack"
-	"github.com/peyman-abdi/avalanche/app/core/config"
-	"github.com/peyman-abdi/avalanche/app/core/trans"
-	"github.com/peyman-abdi/avalanche/app/core/modules"
-	"github.com/peyman-abdi/avalanche/app/core"
 )
 
 func main() {
-	application := app.Initialize()
-	appConfig := config.Initialize(application)
-	appLogger := logger.Initialize()
-	repo, migrator := database.Initialize(appConfig)
-	defer database.Close()
-	localizations := trans.Initialize(appConfig, application, appLogger)
+	services := core.SetupKernel()
 
-	mm := modules.Initialize(appConfig)
+	console = new(ConsoleAppImpl)
+	console.services = services
 
-	s := core.Initialize(application, appConfig, appLogger, repo, migrator, localizations, mm)
+	console.SetupWithConfPath("console")
 
-	appLogger.LoadChannels(s)
-	mm.LoadModules(s)
-
-	consoleApp = new(ConsoleAppImpl)
-	consoleApp.services = s
-
-	consoleApp.SetupWithConfPath("console")
-
-	if err := consoleApp.Run(); err != nil {
+	if err := console.Run(); err != nil {
 		panic(err)
 	}
 }
 
+
 type StackPagePair struct {
 	Primitive tview.Primitive
 	FullScreen bool
+	Name string
 }
 type ConsoleAppImpl struct {
 	services interfaces.Services
@@ -50,9 +34,10 @@ type ConsoleAppImpl struct {
 	mainMenu *tview.List
 	priorities map[int]int
 	pageStack *stack.Stack
+	pageView *tview.Pages
 }
 var _ interfaces.ConsoleApp = (*ConsoleAppImpl)(nil)
-var consoleApp *ConsoleAppImpl
+var console *ConsoleAppImpl
 
 func (c *ConsoleAppImpl) MakeList(title string, items []interfaces.ListItem) interfaces.ConsoleItem {
 	list := tview.NewList()
@@ -70,38 +55,75 @@ func (c *ConsoleAppImpl) MakeList(title string, items []interfaces.ListItem) int
 	list.SetTitle(title)
 	return list
 }
+func (c *ConsoleAppImpl) MakeModal(window interfaces.ModalWindow) interfaces.ConsoleItem {
+	modal := tview.NewModal()
+	modal.SetBorder(true)
+	modal.SetText(window.Content)
+	modal.SetBorderPadding(5, 5, 5, 5)
+	modal.AddButtons(window.Buttons)
+	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		c.Back()
+		window.Callback(buttonIndex)
+	})
+	return modal
+}
+func (c *ConsoleAppImpl) Ask(question string, callback func(bool)) {
+	modal := tview.NewModal()
+	modal.SetBorder(true)
+	modal.SetText(question)
+	modal.SetBorderPadding(5, 5, 5, 5)
+	modal.AddButtons([]string{"Yest", "No"})
+	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		callback(buttonIndex == 0)
+	})
+	c.SetPage("ask", modal, false)
+}
+
+
+
 func (c *ConsoleAppImpl) Back()  {
-	if c.pageStack.Len() >= 1 {
-		pair := c.pageStack.Pop().(StackPagePair)
-		c.app.SetRoot(pair.Primitive, pair.FullScreen)
-		c.app.SetFocus(pair.Primitive)
+	if c.pageStack.Len() >= 2 {
+		last := c.pageStack.Pop().(StackPagePair) // current page
+		c.pageView.RemovePage(last.Name)
+		pair := c.pageStack.Pop().(StackPagePair) // previous page
+		c.pageView.SwitchToPage(pair.Name)
+		c.pageStack.Push(pair) // push previous as current page again
 	} else {
-		c.app.SetRoot(c.mainMenu, true)
-		c.app.SetFocus(c.mainMenu)
+		c.pageView.SwitchToPage("main_menu")
 	}
+
+	c.app.SetFocus(c.pageView)
 }
 func (c *ConsoleAppImpl) BackToMainMenu()  {
 	for c.pageStack.Len() > 0 {
-		c.pageStack.Pop()
+		page := c.pageStack.Pop().(StackPagePair)
+		c.pageView.RemovePage(page.Name)
 	}
-
-	c.app.SetRoot(c.mainMenu, true)
-	c.app.SetFocus(c.mainMenu)
+	c.pageView.SwitchToPage("main_menu")
+	c.app.SetFocus(c.pageView)
 }
 func (c *ConsoleAppImpl) Quit()  {
 	c.app.Stop()
 }
-func (c *ConsoleAppImpl) SetPage(item interfaces.ConsoleItem, fullScreen bool) {
+func (c *ConsoleAppImpl) SetPage(name string, item interfaces.ConsoleItem, fullScreen bool) {
 	primitive, ok := item.(tview.Primitive)
 	if ok {
 		c.pageStack.Push(StackPagePair{
 			Primitive: primitive,
 			FullScreen: fullScreen,
+			Name: name,
 		})
-		c.app.SetRoot(primitive, fullScreen)
-		c.app.SetFocus(primitive)
+
+		if fullScreen {
+			c.pageView.AddAndSwitchToPage(name, primitive, true)
+		} else {
+			c.pageView.AddPage(name, primitive, true, true)
+		}
+
+		c.app.SetFocus(c.pageView)
 	}
 }
+
 func (c *ConsoleAppImpl) SetupWithConfPath(confPath string) {
 	c.pageStack = stack.New()
 
@@ -142,9 +164,12 @@ func (c *ConsoleAppImpl) SetupWithConfPath(confPath string) {
 		c.app.Stop()
 	})
 
+	c.pageView = tview.NewPages()
+	c.pageView.AddPage("main_menu", c.mainMenu, true, true)
+
 	c.app.
-		SetRoot(c.mainMenu, true).
-		SetFocus(c.mainMenu)
+		SetRoot(c.pageView, true).
+		SetFocus(c.pageView)
 }
 func (c *ConsoleAppImpl) Run() error  {
 	return c.app.Run()

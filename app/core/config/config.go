@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/peyman-abdi/conf"
 	"github.com/peyman-abdi/avalanche/app/interfaces"
+	"fmt"
 )
 
 type configImpl struct {
@@ -10,15 +11,23 @@ type configImpl struct {
 }
 
 func Initialize(app interfaces.Application) interfaces.Config {
-	confImpl := new(configImpl)
-
-	confImpl.config, _ = conf.New(app.ConfigPath(""), app.RootPath(""), []conf.EvaluatorFunction {
+	c, err := conf.New(app.ConfigPath(""), app.RootPath(""), []conf.EvaluatorFunction {
 		NewStoragePathEvaluator(app),
 		NewResourcesPathEvaluator(app),
 		NewRootPathEvaluator(app),
 		new (SystemParameterEvaluator),
 		new (TimeEvaluator),
 	})
+
+	if err != nil && c == nil {
+		panic(err)
+	}
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	confImpl := new(configImpl)
+	confImpl.config = c
 
 	return confImpl
 }

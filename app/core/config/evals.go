@@ -120,7 +120,7 @@ func (t *TimeEvaluator) Eval(params []string, def interface{}) interface{} {
 		case "second":
 			return time.Second
 		case "now":
-			return time.Now().String()
+			return time.Now()
 		}
 	}
 	return def

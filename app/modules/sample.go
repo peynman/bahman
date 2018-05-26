@@ -22,7 +22,7 @@ func (_ *SamplePlugin) Title() string {
 func (_ *SamplePlugin) Description() string {
 	return "File driver for Avalanche logger"
 }
-func (_ *SamplePlugin) Initialize() bool {
+func (_ *SamplePlugin) Initialize(services interfaces.Services) bool {
 	return true
 }
 func (_ *SamplePlugin) Interface() interface{} {

@@ -3,25 +3,9 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/peyman-abdi/avalanche/app/interfaces"
-	"github.com/peyman-abdi/avalanche/app/core/app"
 )
 
 type AvalanchePluginConsole struct {
-}
-func (_ *AvalanchePluginConsole) Version() string {
-	return "1.0.0"
-}
-func (_ *AvalanchePluginConsole) VersionCode() int {
-	return 1
-}
-func (_ *AvalanchePluginConsole) AvalancheVersionCode() int {
-	return app.VersionCode
-}
-func (_ *AvalanchePluginConsole) Title() string {
-	return "Console Logger"
-}
-func (_ *AvalanchePluginConsole) Description() string {
-	return "Console driver for Avalanche logger"
 }
 func (_ *AvalanchePluginConsole) Initialize(services interfaces.Services) bool {
 	consoleLogger = new(ConsoleLogChannel)
@@ -33,6 +17,7 @@ func (_ *AvalanchePluginConsole) Interface() interface{} {
 }
 var PluginInstance interfaces.AvalanchePlugin = new(AvalanchePluginConsole)
 
+
 type ConsoleLogChannel struct {
 	services interfaces.Services
 	logger *logrus.Logger
@@ -40,15 +25,15 @@ type ConsoleLogChannel struct {
 var _ interfaces.LoggingChannel = (*ConsoleLogChannel)(nil)
 var consoleLogger *ConsoleLogChannel
 
-func (logger *ConsoleLogChannel) Config(conf_path string) bool {
+func (logger *ConsoleLogChannel) Config(confPath string) bool {
 	consoleLogger.logger = logrus.New()
 
-	switch logger.services.Config().GetString(conf_path + ".format", "text") {
+	switch logger.services.Config().GetString(confPath+ ".format", "text") {
 	case "json":
 		consoleLogger.logger.Formatter = new(logrus.JSONFormatter)
 	}
 
-	setLoggerLevel(consoleLogger.logger, logger.services.Config().GetString(conf_path + ".level", "debug"))
+	setLoggerLevel(consoleLogger.logger, logger.services.Config().GetString(confPath+ ".level", "debug"))
 
 	return true
 }

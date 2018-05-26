@@ -5,9 +5,9 @@ go:
   - "1.10.2"
 
 install:
-  make deps
+  make go_get
   make sample_env
-  make build
+  make test
 
 script:
   make test

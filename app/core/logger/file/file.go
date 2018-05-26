@@ -9,23 +9,7 @@ import (
 	"time"
 )
 
-
 type AvalanchePluginFile struct {
-}
-func (_ *AvalanchePluginFile) Version() string {
-	return "1.0.0"
-}
-func (_ *AvalanchePluginFile) VersionCode() int {
-	return 1
-}
-func (_ *AvalanchePluginFile) AvalancheVersionCode() int {
-	return 1
-}
-func (_ *AvalanchePluginFile) Title() string {
-	return "File Logger"
-}
-func (_ *AvalanchePluginFile) Description() string {
-	return "File driver for Avalanche logger"
 }
 func (_ *AvalanchePluginFile) Initialize(services interfaces.Services) bool {
 	fileLogger = new(FileLogChannel)
@@ -36,7 +20,6 @@ func (_ *AvalanchePluginFile) Interface() interface{} {
 	return fileLogger
 }
 var PluginInstance interfaces.AvalanchePlugin = new(AvalanchePluginFile)
-
 
 type FileLogChannel struct {
 	services interfaces.Services

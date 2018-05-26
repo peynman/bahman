@@ -8,14 +8,21 @@ type ListItem struct {
 	Shortcut rune
 	Callback func()
 }
+type ModalWindow struct {
+	Content string
+	Buttons []string
+	Callback func(int)
+}
 
 type ConsoleApp interface {
 	Back()
 	BackToMainMenu()
 	Quit()
-	SetPage(item ConsoleItem, fullScreen bool)
+	SetPage(name string, item ConsoleItem, fullScreen bool)
+	Ask(question string, callback func(yes bool))
 
 	MakeList(title string, items []ListItem) ConsoleItem
+	MakeModal(window ModalWindow) ConsoleItem
 }
 
 type ConsolePage interface {

@@ -3,16 +3,26 @@ package logger
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/peyman-abdi/avalanche/app/interfaces"
+	"runtime"
 )
 
 type loggerImpl struct {
 	loggers []*logrus.Logger
 	channels map[string]interfaces.LoggingChannel
+	appendDebugData func(fields *map[string]interface{})
 }
 
-func Initialize() interfaces.Logger  {
+func Initialize(config interfaces.Config) interfaces.Logger  {
 	log := new(loggerImpl)
 	log.channels = make(map[string]interfaces.LoggingChannel)
+
+	if config.GetBoolean("app.debug", false) {
+		log.appendDebugData = appendCallerInfo
+	} else {
+		log.appendDebugData = func(fields *map[string]interface{}) {
+		}
+	}
+
 	return log
 }
 
@@ -38,6 +48,11 @@ func (l *loggerImpl) LoadChannels(services interfaces.Services) {
 		}
 	}
 }
+
+func (l *loggerImpl) LoadConsole() {
+	l.loggers = append(l.loggers, logrus.New())
+}
+
 
 func (l *loggerImpl) log(level string, message string, fields map[string]interface{})  {
 	switch level {
@@ -69,49 +84,83 @@ func (l *loggerImpl) log(level string, message string, fields map[string]interfa
 }
 
 func (l *loggerImpl) Debug(message string) {
-	l.log("debug", message, nil)
+	fields := make(map[string]interface{})
+	l.appendDebugData(&fields)
+	l.log("debug", message, fields)
 }
 
 func (l *loggerImpl) Info(message string) {
-	l.log("info", message, nil)
+	fields := make(map[string]interface{})
+	l.appendDebugData(&fields)
+	l.log("info", message, fields)
 }
 
 func (l *loggerImpl) Warn(message string) {
-	l.log("warn", message, nil)
+	fields := make(map[string]interface{})
+	l.appendDebugData(&fields)
+	l.log("warn", message, fields)
 }
 
 func (l *loggerImpl) Error(message string) {
-	l.log("error", message, nil)
+	fields := make(map[string]interface{})
+	l.appendDebugData(&fields)
+	l.log("error", message, fields)
 }
 
 func (l *loggerImpl) Fatal(message string) {
-	l.log("fatal", message, nil)
+	fields := make(map[string]interface{})
+	l.appendDebugData(&fields)
+	l.log("fatal", message, fields)
 }
 
 func (l *loggerImpl) Panic(message string) {
-	l.log("panic", message, nil)
+	fields := make(map[string]interface{})
+	l.appendDebugData(&fields)
+	l.log("panic", message, fields)
 }
 
 func (l *loggerImpl) DebugFields(message string, fields map[string]interface{}) {
+	l.appendDebugData(&fields)
 	l.log("debug", message, fields)
 }
 
 func (l *loggerImpl) InfoFields(message string, fields map[string]interface{}) {
+	l.appendDebugData(&fields)
 	l.log("info", message, fields)
 }
 
 func (l *loggerImpl) WarnFields(message string, fields map[string]interface{}) {
+	l.appendDebugData(&fields)
 	l.log("warn", message, fields)
 }
 
 func (l *loggerImpl) ErrorFields(message string, fields map[string]interface{}) {
+	l.appendDebugData(&fields)
 	l.log("error", message, fields)
 }
 
 func (l *loggerImpl) FatalFields(message string, fields map[string]interface{}) {
+	l.appendDebugData(&fields)
 	l.log("fatal", message, fields)
 }
 
 func (l *loggerImpl) PanicFields(message string, fields map[string]interface{}) {
+	l.appendDebugData(&fields)
 	l.log("panic", message, fields)
+}
+
+func appendCallerInfo(fields *map[string]interface{}) {
+	_, file, line, ok := runtime.Caller(2)
+	buf := make([]byte, 1<<16)
+	stackSize := runtime.Stack(buf, true)
+
+	if ok {
+		if fields == nil {
+			*fields = make(map[string]interface{})
+		}
+
+		(*fields)["file"] = file
+		(*fields)["line"] = line
+		(*fields)["stack"] = string(buf[0:stackSize])
+	}
 }

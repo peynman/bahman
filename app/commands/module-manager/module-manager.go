@@ -2,26 +2,11 @@ package main
 
 import (
 	"github.com/peyman-abdi/avalanche/app/interfaces"
-	"reflect"
-	"fmt"
+	"math"
 )
 
+
 type ModulesConsolePlugin struct {
-}
-func (_ *ModulesConsolePlugin) Version() string {
-	return "1.0.0"
-}
-func (_ *ModulesConsolePlugin) VersionCode() int {
-	return 1
-}
-func (_ *ModulesConsolePlugin) AvalancheVersionCode() int {
-	return 1
-}
-func (_ *ModulesConsolePlugin) Title() string {
-	return "Module Manager"
-}
-func (_ *ModulesConsolePlugin) Description() string {
-	return "Modules management tools for CLI"
 }
 func (_ *ModulesConsolePlugin) Initialize(services interfaces.Services) bool {
 	modulesConsole = new(ModulesConsole)
@@ -48,8 +33,38 @@ func (d *ModulesConsole) Description() string {
 func (d *ModulesConsole) Priority() int {
 	return 10
 }
+func (d *ModulesConsole) ShowModulesList(console interfaces.ConsoleApp, avModules [] interfaces.Module, callback func(module interfaces.Module)) {
+	var items = make([]interfaces.ListItem, int(math.Max(float64(len(avModules)), 1)))
+
+	if len(avModules) > 0 {
+		for index, module := range avModules {
+			caller := func(lModule interfaces.Module) interfaces.ListItem {
+				return interfaces.ListItem{
+					Title: lModule.Title(),
+					Description: lModule.Description(),
+					Shortcut: 0,
+					Callback: func() {
+						callback(lModule)
+					},
+				}
+			}
+			items[index] = caller(module)
+		}
+	} else {
+		items[0] = interfaces.ListItem{
+			Title: "No module found in this list!",
+			Description:"",
+			Shortcut: 0,
+			Callback: func() {
+				console.Back()
+			},
+		}
+	}
+	console.SetPage("modules_list", console.MakeList("Available modules", items), true)
+}
 func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 	console.SetPage(
+		"modules_manager_main",
 		console.MakeList("Avalanche Module Management", []interfaces.ListItem {
 			{
 				"List",
@@ -57,18 +72,15 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				'l',
 				func() {
 					avModules := d.services.Modules().List()
-					var items = make([]interfaces.ListItem, len(avModules))
-					for index, module := range avModules {
-						items[index] = interfaces.ListItem{
-							Title: reflect.TypeOf(module).String(),
-							Description: "",
-							Shortcut: 0,
-							Callback: func() {
-
+					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+						console.SetPage("module_about", console.MakeModal(interfaces.ModalWindow{
+							Content:module.Title() + " - " + module.Description() + " - Version: " + module.Version(),
+							Buttons:[]string {"Done"},
+							Callback: func(buttonIndex int) {
+								console.Back()
 							},
-						}
-					}
-					console.SetPage(console.MakeList("Available modules", items), true)
+						}), false)
+					})
 				},
 			},
 			{
@@ -76,7 +88,18 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				"Install a available",
 				'i',
 				func() {
-					fmt.Println("item clicked inside 1")
+					avModules := d.services.Modules().NotInstalled()
+					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+						console.Ask("Are you sure you want to activate this module?", func(yes bool) {
+							if yes {
+								err := d.services.Modules().Install(module)
+								if err != nil {
+
+								}
+							}
+							console.Back()
+						})
+					})
 				},
 			},
 			{
@@ -84,6 +107,10 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				"Activate a module",
 				'a',
 				func() {
+					avModules := d.services.Modules().Deactivated()
+					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+
+					})
 				},
 			},
 			{
@@ -91,6 +118,10 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				"Deactivate a module; but don not remove its files or data",
 				'd',
 				func() {
+					avModules := d.services.Modules().Activated()
+					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+
+					})
 				},
 			},
 			{
@@ -98,6 +129,10 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				"Remove all module files and rollback all migrations",
 				'p',
 				func() {
+					avModules := d.services.Modules().Installed()
+					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+
+					})
 				},
 			},
 		}),
