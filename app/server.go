@@ -16,6 +16,8 @@ func main() {
 		"Variant":   application.Variant(),
 		"BuildTime": application.BuildTime(),
 	})
+
+	services.Router().Serve()
 }
 
 

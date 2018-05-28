@@ -8,4 +8,5 @@ type Services interface {
 	Logger() Logger
 	Modules() ModuleManager
 	App() Application
+	Router() Router
 }

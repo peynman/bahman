@@ -11,10 +11,14 @@ type moduleManagerImpl struct {
 	services interfaces.Services
 }
 
-func Initialize(config interfaces.Config) interfaces.ModuleManager {
+func Initialize(config interfaces.Config, migrator interfaces.Migrator) interfaces.ModuleManager {
 	module := new(moduleManagerImpl)
 
 	module.ModuleTableName = config.GetString("modules.table", "modules")
+
+	if !migrator.HasTable(&ModuleModel{}) {
+		migrator.AutoMigrate(&ModuleModel{})
+	}
 
 	return module
 }
@@ -31,7 +35,7 @@ func (m *moduleManagerImpl) LoadModules(services interfaces.Services) {
 
 func (m *moduleManagerImpl) IsActive(module interfaces.Module) bool {
 	var model *ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module)).GetFirst(model)
+	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module).String()).GetFirst(&model)
 	if model != nil {
 		return model.Flags & INSTALLED != 0 && model.Flags & ACTIVE != 0
 	}
@@ -40,7 +44,7 @@ func (m *moduleManagerImpl) IsActive(module interfaces.Module) bool {
 }
 func (m *moduleManagerImpl) IsInstalled(module interfaces.Module) bool {
 	var model *ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module)).GetFirst(model)
+	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module).String()).GetFirst(&model)
 	if model != nil {
 		return model.Flags & INSTALLED != 0
 	}
@@ -52,7 +56,7 @@ func (m *moduleManagerImpl) List() []interfaces.Module {
 }
 func (m *moduleManagerImpl) Activated() []interfaces.Module {
 	var models []*ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("(flags & ?) != 0", ACTIVE).Get(models)
+	m.services.Repository().Query(&ModuleModel{}).Where("(flags & ?) != 0", ACTIVE).Get(&models)
 
 	var modulesList []interfaces.Module
 	for _, model := range models {
@@ -68,7 +72,7 @@ func (m *moduleManagerImpl) Activated() []interfaces.Module {
 }
 func (m *moduleManagerImpl) Installed() []interfaces.Module {
 	var models []*ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("(flags & ?) != 0", INSTALLED).Get(models)
+	m.services.Repository().Query(&ModuleModel{}).Where("(flags & ?) != 0", INSTALLED).Get(&models)
 
 	var modulesList []interfaces.Module
 	for _, model := range models {
@@ -84,7 +88,7 @@ func (m *moduleManagerImpl) Installed() []interfaces.Module {
 }
 func (m *moduleManagerImpl) Deactivated() []interfaces.Module {
 	var models []*ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("(flags & ?) == 0 AND (flags & ?) != 0", ACTIVE, INSTALLED).Get(models)
+	m.services.Repository().Query(&ModuleModel{}).Where("flags & ? == 0", ACTIVE).Where("flags & ? != 0", INSTALLED).Get(&models)
 
 	var modulesList []interfaces.Module
 	for _, model := range models {
@@ -100,7 +104,7 @@ func (m *moduleManagerImpl) Deactivated() []interfaces.Module {
 }
 func (m *moduleManagerImpl) NotInstalled() []interfaces.Module {
 	var models []*ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("(flags & ?) == 0", INSTALLED).Get(models)
+	m.services.Repository().Query(&ModuleModel{}).Where("(flags & ?) == 0", INSTALLED).Get(&models)
 
 	var modulesList []interfaces.Module
 	for _, module := range m.AvailableModules {
@@ -122,7 +126,7 @@ func (m *moduleManagerImpl) NotInstalled() []interfaces.Module {
 
 func (m *moduleManagerImpl) Install(module interfaces.Module) error {
 	var model *ModuleModel
-	err := m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module).String()).GetFirst(model)
+	err := m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module).String()).GetFirst(&model)
 	if err != nil { panic(err) }
 
 	err = m.services.Migrator().Migrate(module.Migrations())
@@ -154,9 +158,7 @@ func (m *moduleManagerImpl) Install(module interfaces.Module) error {
 }
 func (m *moduleManagerImpl) Activate(module interfaces.Module) error {
 	var model *ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module)).GetFirst(model)
-
-	m.services.Migrator().Migrate(module.Migrations())
+	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module).String()).GetFirst(&model)
 
 	if model == nil || model.Flags & INSTALLED == 0 {
 		return ModuleError(module, "Target module is not installed yet and con not be activated")
@@ -164,6 +166,10 @@ func (m *moduleManagerImpl) Activate(module interfaces.Module) error {
 	if model.Flags & ACTIVE != 0 {
 		return ModuleError(module, "Target module is already active")
 	}
+
+	m.services.Router().RegisterMiddleWares(module.MiddleWares())
+	m.services.Router().RegisterGroups(module.GroupsHandlers())
+	m.services.Router().RegisterRoutes(module.Routes())
 
 	model.Flags |= ACTIVE
 	m.services.Repository().UpdateEntity(model)
@@ -179,9 +185,9 @@ func (m *moduleManagerImpl) Activate(module interfaces.Module) error {
 }
 func (m *moduleManagerImpl) Purge(module interfaces.Module) error {
 	var model *ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module)).GetFirst(model)
+	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module).String()).GetFirst(&model)
 
-	m.services.Migrator().Migrate(module.Migrations())
+	m.services.Migrator().Rollback(module.Migrations())
 
 	if model == nil || model.Flags & INSTALLED == 0 {
 		return ModuleError(module, "Target module is not installed yet and con not be deactivated")
@@ -196,7 +202,7 @@ func (m *moduleManagerImpl) Purge(module interfaces.Module) error {
 }
 func (m *moduleManagerImpl) Deactivate(module interfaces.Module) error {
 	var model *ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module)).GetFirst(model)
+	m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module).String()).GetFirst(&model)
 
 	m.services.Migrator().Migrate(module.Migrations())
 

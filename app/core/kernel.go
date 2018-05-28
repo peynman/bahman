@@ -8,6 +8,7 @@ import (
 	"github.com/peyman-abdi/avalanche/app/core/database"
 	"github.com/peyman-abdi/avalanche/app/core/trans"
 	"github.com/peyman-abdi/avalanche/app/core/modules"
+	"github.com/peyman-abdi/avalanche/app/core/router"
 )
 
 func SetupKernel() interfaces.Services {
@@ -15,10 +16,9 @@ func SetupKernel() interfaces.Services {
 	appConfig := config.Initialize(application)
 	appLogger := logger.Initialize(appConfig)
 	repo, migrator := database.Initialize(appConfig, appLogger)
-	defer database.Close()
 	localizations := trans.Initialize(appConfig, application, appLogger)
-
-	mm := modules.Initialize(appConfig)
+	mm := modules.Initialize(appConfig, migrator)
+	r := router.Initialize(appConfig)
 
 	s := initializeServices(
 		application,
@@ -28,6 +28,7 @@ func SetupKernel() interfaces.Services {
 		migrator,
 		localizations,
 		mm,
+		r,
 	)
 
 	appLogger.LoadChannels(s)

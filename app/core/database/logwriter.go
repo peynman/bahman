@@ -17,6 +17,4 @@ func (_ *AvalancheDBLogWriter) Println(v... interface{})  {
 
 		loggerRef.DebugFields("Database Query", data)
 	}
-
-	fmt.Printf("DB FORCE LOG: %v\n", v)
 }

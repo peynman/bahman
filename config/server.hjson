@@ -1,3 +1,17 @@
 {
-    port: 1400
+    address: "127.0.0.1",
+    port: 8080,
+    name: "Avalanche Server",
+#    concurrency: 1024 * 1024,
+#    keepAlive: true,
+#    readBufferSize: ,
+#    writeBufferSize: ,
+#    readTimeout: ,
+#    writeTimeout: ,
+#    maxConnPerIP: ,
+#    maxRequestPerConn: ,
+#    maxKeepAliveDuration: time(hour),
+#    maxRequestBodySize: 1g,
+#    reduceMemoryUsage: false,
+#    getOnly: false,
 }

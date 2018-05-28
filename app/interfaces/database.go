@@ -11,6 +11,12 @@ type Migrator interface {
 	HasTable(interface{}) bool
 	Migrate([]Migratable) error
 	Rollback([]Migratable) error
+	ModifyColumn(string, string) error
+	AddIndex(string, ...string) error
+	AddUniqueIndex(string, ...string) error
+	RemoveIndex(string) error
+	AddForeignKey(name string, destination string, delete string, update string) error
+	RemoveForeignKey(name string, destination string) error
 }
 
 type Entity interface {
@@ -57,6 +63,6 @@ type Repository interface {
 }
 
 type Migratable interface {
-	Up(db Migrator) bool
-	Down(db Migrator) bool
+	Up(db Migrator) error
+	Down(db Migrator) error
 }

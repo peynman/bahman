@@ -12,6 +12,7 @@ type servicesImpl struct {
 	mig interfaces.Migrator
 	trans interfaces.Localization
 	mm interfaces.ModuleManager
+	router interfaces.Router
 }
 
 var instance *servicesImpl
@@ -24,6 +25,7 @@ func initializeServices(
 	mig interfaces.Migrator,
 	trans interfaces.Localization,
 	mm interfaces.ModuleManager,
+	router interfaces.Router,
 ) interfaces.Services {
 	instance = new(servicesImpl)
 
@@ -34,6 +36,7 @@ func initializeServices(
 	instance.mig = mig
 	instance.repo = repo
 	instance.mm = mm
+	instance.router = router
 
 	return instance
 }
@@ -45,4 +48,4 @@ func (s *servicesImpl) Config() interfaces.Config { return s.config }
 func (s *servicesImpl) Logger() interfaces.Logger { return s.logger }
 func (s *servicesImpl) Modules() interfaces.ModuleManager { return s.mm }
 func (s *servicesImpl) App() interfaces.Application { return s.app }
-
+func (s *servicesImpl) Router() interfaces.Router { return s.router }

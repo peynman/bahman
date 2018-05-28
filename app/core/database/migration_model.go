@@ -7,7 +7,7 @@ import (
 
 type MigrationModel struct {
 	ID int64
-	Step int
+	Step int64
 	Interface string `gorm:"size:192,unique_index"`
 	CreatedAt *time.Time
 }

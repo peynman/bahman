@@ -4,8 +4,8 @@ import (
 	"github.com/jinzhu/gorm"
 	"reflect"
 	"github.com/peyman-abdi/avalanche/app/interfaces"
-	"github.com/peyman-abdi/avalanche/app/core/modules"
 	"strings"
+	"database/sql"
 )
 
 type MigrationManager struct {
@@ -73,6 +73,71 @@ func (m *MigrationManager) DropColumn(column string) error {
 	return nil
 }
 
+func (m *MigrationManager) ModifyColumn(column string, typ string) error {
+	err := m.connection.ModifyColumn(column, typ).Error
+	if err != nil {
+		m.log.ErrorFields("Migrator:ModifyColumn", map[string]interface{} {
+			"error": err,
+			"column": column,
+			"type": typ,
+		})
+	}
+	return nil
+}
+func (m *MigrationManager) AddIndex(name string, columns...string) error {
+	err := m.connection.AddIndex(name, columns...).Error
+	if err != nil {
+		m.log.ErrorFields("Migrator:AddIndex", map[string]interface{} {
+			"error": err,
+			"name": name,
+			"columns": columns,
+		})
+	}
+	return nil
+}
+func (m *MigrationManager) AddUniqueIndex(name string, columns...string) error {
+	err := m.connection.AddUniqueIndex(name, columns...).Error
+	if err != nil {
+		m.log.ErrorFields("Migrator:AddUniqueIndex", map[string]interface{} {
+			"error": err,
+			"name": name,
+			"columns": columns,
+		})
+	}
+	return nil
+}
+func (m *MigrationManager) RemoveIndex(name string) error {
+	err := m.connection.RemoveIndex(name).Error
+	if err != nil {
+		m.log.ErrorFields("Migrator:RemoveIndex", map[string]interface{} {
+			"error": err,
+			"name": name,
+		})
+	}
+	return nil
+}
+func (m *MigrationManager) RemoveForeignKey(name string, dest string) error {
+	err := m.connection.RemoveForeignKey(name, dest).Error
+	if err != nil {
+		m.log.ErrorFields("Migrator:RemoveIndex", map[string]interface{} {
+			"error": err,
+			"name": name,
+		})
+	}
+	return nil
+}
+func (m *MigrationManager) AddForeignKey(name string, dest string, delete string, update string) error {
+	err := m.connection.AddForeignKey(name, dest, delete, update).Error
+	if err != nil {
+		m.log.ErrorFields("Migrator:RemoveIndex", map[string]interface{} {
+			"error": err,
+			"name": name,
+		})
+	}
+	return nil
+}
+
+
 func (m *MigrationManager) Migrate(migrates []interfaces.Migratable) error {
 	return m.migrate(m.connection, migrates)
 }
@@ -99,9 +164,6 @@ func (m *MigrationManager) setup(connection *gorm.DB) {
 	if !connection.HasTable(&MigrationModel{}) {
 		connection.AutoMigrate(&MigrationModel{})
 	}
-	if !connection.HasTable(&modules.ModuleModel{}) {
-		connection.AutoMigrate(&modules.ModuleModel{})
-	}
 }
 
 func (m *MigrationManager) migrate(connection *gorm.DB, migrates []interfaces.Migratable) error {
@@ -113,7 +175,7 @@ func (m *MigrationManager) migrate(connection *gorm.DB, migrates []interfaces.Mi
 	}
 
 	repo := repoManager.Query(&MigrationModel{})
-	err := repo.Where("interface IN (`?`)", strings.Join(migratableInterfaces, "`,`")).Get(&migrations)
+	err := repo.Where("interface IN (?)", strings.Join(migratableInterfaces, ",")).Get(&migrations)
 	if err != nil {
 		m.log.ErrorFields("Migrator:Migrate", map[string]interface{} {
 			"error": err,
@@ -123,8 +185,8 @@ func (m *MigrationManager) migrate(connection *gorm.DB, migrates []interfaces.Mi
 		return err
 	}
 
-	var maxStep int
-	err = repo.Select("max(step)").Get(&maxStep)
+	var maxStepV sql.NullInt64
+	err = repo.Select("max(step)").GetValue(&maxStepV)
 	if err != nil {
 		m.log.ErrorFields("Migrator:Migrate", map[string]interface{} {
 			"error": err,
@@ -132,11 +194,15 @@ func (m *MigrationManager) migrate(connection *gorm.DB, migrates []interfaces.Mi
 			"migrates": reflect.TypeOf(migrates).String(),
 		})
 		return err
+	}
+	var maxStep int64 = 0
+	if maxStepV.Valid {
+		maxStep = maxStepV.Int64
 	}
 
 	for index, migratable := range migrates {
 		if migration := getMigration(migrations, migratable); migration == nil {
-			if migratable.Up(m) {
+			if err = migratable.Up(m); err == nil {
 				migration = &MigrationModel{
 					Step: maxStep + 1,
 					Interface: migratableInterfaces[index],
@@ -150,6 +216,8 @@ func (m *MigrationManager) migrate(connection *gorm.DB, migrates []interfaces.Mi
 					})
 					return err
 				}
+			} else {
+				return err
 			}
 		}
 	}
@@ -167,18 +235,7 @@ func (m *MigrationManager) rollback(connection *gorm.DB, migrates []interfaces.M
 
 	repo := repoManager.Query(&MigrationModel{})
 
-	err := repo.Where("interface IN (?)", migratableInterfaces).Get(&migrations)
-	if err != nil {
-		m.log.ErrorFields("Migrator:Rollback", map[string]interface{} {
-			"error": err,
-			"connection": reflect.TypeOf(connection).String(),
-			"migrates": reflect.TypeOf(migrates).String(),
-		})
-		return err
-	}
-
-	var maxStep int
-	err = repo.Select("max(step)").GetValue(&maxStep)
+	err := repo.Where("interface IN (?)", strings.Join(migratableInterfaces, ",")).Get(&migrations)
 	if err != nil {
 		m.log.ErrorFields("Migrator:Rollback", map[string]interface{} {
 			"error": err,
@@ -189,8 +246,8 @@ func (m *MigrationManager) rollback(connection *gorm.DB, migrates []interfaces.M
 	}
 
 	for _, migratable := range migrates {
-		if migration := getMigration(migrations, migratable); migration == nil {
-			if migratable.Down(m) {
+		if migration := getMigration(migrations, migratable); migration != nil {
+			if err = migratable.Down(m); err == nil {
 				err = repoManager.DeleteEntity(migration)
 				if err != nil {
 					m.log.ErrorFields("Migrator:Rollback", map[string]interface{} {
@@ -200,6 +257,8 @@ func (m *MigrationManager) rollback(connection *gorm.DB, migrates []interfaces.M
 					})
 					return err
 				}
+			} else {
+				return err
 			}
 		}
 	}

@@ -129,6 +129,7 @@ func (r *RepositoryManager) GetValue(result interface{}) error {
 			r.db = r.db.Where("deleted_at is null")
 		}
 	}
+
 	err := r.db.Row().Scan(result)
 	r.Reset()
 
@@ -143,6 +144,15 @@ func (r *RepositoryManager) GetValue(result interface{}) error {
 }
 
 func (r *RepositoryManager) GetValues(resultsArray interface{}) error {
+	if !r.includeDeletes {
+		ty := reflect.TypeOf(r.entity)
+		if ty.Kind() == reflect.Ptr {
+			ty = ty.Elem()
+		}
+		if _, has := ty.FieldByName("DeletedAt"); has {
+			r.db = r.db.Where("deleted_at is null")
+		}
+	}
 	rows, err := r.db.Rows()
 	defer rows.Close()
 

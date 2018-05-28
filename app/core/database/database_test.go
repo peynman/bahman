@@ -53,8 +53,8 @@ func init()  {
 
 type TestModel struct {
 	ID int64
-	TextValue string `gorm:"size:199;unique_index;not null;"`
-	NullText *string `gorm:"size:199"`
+	TextValue string `gorm:"size:199;unique_index;not null;default:''"`
+	NullText *string `gorm:"size:199;"`
 	NullInt *int
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
@@ -66,35 +66,119 @@ func (t *TestModel) PrimaryKey() string {
 func (t *TestModel) TableName() string {
 	return "tests"
 }
+type TestModelBefore struct {
+	ID int64
+	NullInt *int
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
+}
+func (t *TestModelBefore) PrimaryKey() string {
+	return "id"
+}
+func (t *TestModelBefore) TableName() string {
+	return "tests"
+}
 
-func TestMigrations(t *testing.T) {
+type TestMigratable1 struct {
+}
+func (t *TestMigratable1) Up(migrator interfaces.Migrator) error {
 	var err error
 	if err = mig.AutoMigrate(&TestModel{}); err != nil {
+		return err
+	}
+	return nil
+}
+func (t *TestMigratable1) Down(migrator interfaces.Migrator) error {
+	var err error
+	if err = mig.DropTableIfExists(&TestModel{}); err != nil {
+		return err
+	}
+	return nil
+}
+type TestMigratable0 struct {
+}
+func (t *TestMigratable0) Up(migrator interfaces.Migrator) error {
+	var err error
+	if err = mig.CreateTable(&TestModelBefore{}); err != nil {
+		return err
+	}
+	return nil
+}
+func (t *TestMigratable0) Down(migrator interfaces.Migrator) error {
+	var err error
+	if err = mig.DropTableIfExists(&TestModelBefore{}); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Tests
+func TestMigrations(t *testing.T) {
+	var err error
+
+	if err = mig.Migrate([]interfaces.Migratable{
+		new(TestMigratable0),
+	}); err != nil {
 		t.Error(err)
 	}
 
 	if !mig.HasTable("tests") {
 		t.Errorf("Failed creating tests table!")
 	}
-	//
-	//var migrations []*database.MigrationModel
-	//if err = repo.Query(&database.MigrationModel{}).Get(&migrations); err != nil {
-	//	t.Error(err)
-	//}
-	//
-	//if len(migrations) != 1 {
-	//	t.Errorf("Migrations in not inserted")
-	//}
-	//t.Logf("Migrations: %v", migrations)
-}
 
+
+	var migrations []*database.MigrationModel
+	if err = repo.Query(&database.MigrationModel{}).Get(&migrations); err != nil {
+		t.Error(err)
+	}
+
+	if len(migrations) != 1 {
+		t.Errorf("Migrations in not inserted")
+	}
+
+	if err = mig.Migrate([]interfaces.Migratable{
+		new(TestMigratable1),
+	}); err != nil {
+		t.Error(err)
+	}
+
+	if err = repo.Query(&database.MigrationModel{}).Get(&migrations); err != nil {
+		t.Error(err)
+	}
+
+	if len(migrations) != 2 {
+		t.Errorf("Migrations in not inserted")
+	}
+
+	if err = mig.Rollback([]interfaces.Migratable {
+		new(TestMigratable1),
+	}); err != nil {
+		t.Error(err)
+	}
+
+	if err = repo.Query(&database.MigrationModel{}).Get(&migrations); err != nil {
+		t.Error(err)
+	}
+
+	if len(migrations) != 1 {
+		t.Errorf("Migrations in not rolledback")
+	}
+}
 func TestQueries(t *testing.T) {
+	var err error
+	if err = mig.Migrate([]interfaces.Migratable{
+		new(TestMigratable1),
+	}); err != nil {
+		t.Error(err)
+	}
+
 	InsertTest(t)
 	QueryTest(t)
 	UpdateTest(t)
 	SoftDeleteTest(t)
 }
 
+// Internal test functions
 func UpdateTest(t *testing.T) {
 	var err error
 	var tQuery = repo.Query(&TestModel{})
@@ -186,7 +270,7 @@ func SoftDeleteTest(t *testing.T) {
 		t.Errorf("All entities are deleted but count is bigger than zero!")
 	}
 
-	t.Logf("all deleted: %d", count)
+	//t.Logf("all deleted: %d", count)
 
 	if err = tQuery.IncludeDeleted().Select("count(*)").GetValue(&count); err != nil {
 		t.Error(err)
@@ -208,9 +292,9 @@ func QueryTest(t *testing.T) {
 		t.Error("could not query test objects")
 	}
 
-	for _, m := range ms {
-		t.Logf("Object: %v", m)
-	}
+	//for _, m := range ms {
+	//	t.Logf("Object: %v", m)
+	//}
 
 	QueryValuesTest(t)
 }
@@ -222,7 +306,7 @@ func QueryValuesTest(t *testing.T) {
 	if err = tQuery.Select("created_at").Limit(1).Offset(1).GetValue(&lastCreate); err != nil {
 		t.Error(err)
 	}
-	t.Logf("Last created_at: %v", lastCreate)
+	//t.Logf("Last created_at: %v", lastCreate)
 
 	QueryIntValuesTest(t)
 	QueryStrValuesTest(t)
@@ -245,7 +329,7 @@ func QueryIntValuesTest(t *testing.T) {
 	}
 
 	if len(idsList) == 2 && idsList[0] == 1 && idsList[1] == 2 {
-		t.Logf("idsList: %v", idsList)
+		//t.Logf("idsList: %v", idsList)
 	} else {
 		t.Errorf("Ids List error: %v", idsList)
 	}
@@ -256,7 +340,7 @@ func QueryIntValuesTest(t *testing.T) {
 	}
 
 	if len(idsRefList) == 2 && *idsRefList[0] == 12 && *idsRefList[1] == 3 {
-		t.Logf("idsRefList: %v", idsRefList)
+		//t.Logf("idsRefList: %v", idsRefList)
 	} else {
 		t.Errorf("Ids Ref List error: %v", idsRefList)
 	}
@@ -274,7 +358,7 @@ func QueryStrValuesTest(t *testing.T) {
 	if len(strList) == 2 && (
 		(strList[0] == "test string 2" && strList[1] == "test string 1") ||
 			(strList[1] == "test string 2" && strList[0] == "test string 1")) {
-		t.Logf("strList: %v", strList)
+		//t.Logf("strList: %v", strList)
 	} else {
 		t.Errorf("Strings List error: %v", strList)
 	}
@@ -285,7 +369,7 @@ func QueryStrValuesTest(t *testing.T) {
 	}
 
 	if len(strsRefList) == 2 && *strsRefList[1] == "null able text" {
-		t.Logf("strRefList[1]: %v", *strsRefList[1])
+		//t.Logf("strRefList[1]: %v", *strsRefList[1])
 	} else {
 		t.Errorf("Strs Ref List error: %v", strsRefList)
 	}
@@ -309,7 +393,7 @@ func InsertTest(t *testing.T) {
 		t.Errorf("test object was not inserted: %d", m2.ID)
 	}
 }
-
+// Helper functions
 func queryTestNullText(where string, expected string, t *testing.T) *TestModel {
 	var err error
 	var tQuery = repo.Query(&TestModel{})

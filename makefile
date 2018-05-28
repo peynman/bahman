@@ -14,6 +14,9 @@ DEPENDENCIES=\
  github.com/sirupsen/logrus \
  github.com/uniplaces/carbon \
  github.com/nicksnyder/go-i18n/goi18n \
+ github.com/CloudyKit/jet \
+ github.com/qiangxue/fasthttp-routing \
+ github.com/Knetic/govaluate.git \
 
 ##### METHODS
 define getAppModulesPath

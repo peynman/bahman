@@ -6,6 +6,9 @@ type Module interface {
 	Version() string
 
 	Migrations() []Migratable
+	Routes() []*Route
+	MiddleWares() map[string]RequestHandler
+	GroupsHandlers() map[string]RequestHandler
 
 	Activated() bool
 	Installed() bool
