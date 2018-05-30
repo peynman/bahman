@@ -15,8 +15,10 @@ DEPENDENCIES=\
  github.com/uniplaces/carbon \
  github.com/nicksnyder/go-i18n/goi18n \
  github.com/CloudyKit/jet \
- github.com/qiangxue/fasthttp-routing \
- github.com/Knetic/govaluate.git \
+ github.com/peyman-abdi/fasthttp-routing \
+ github.com/json-iterator/go \
+ github.com/graphql-go/graphql \
+ github.com/stretchr/testify/assert \
 
 ##### METHODS
 define getAppModulesPath

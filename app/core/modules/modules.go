@@ -31,6 +31,19 @@ func (m *moduleManagerImpl) LoadModules(services interfaces.Services) {
 	for index, moduleInterface := range modules {
 		m.AvailableModules[index] = moduleInterface.Interface().(interfaces.Module)
 	}
+
+	actives := m.Activated()
+	for _, module := range actives {
+		m.services.Router().RegisterMiddleWares(module.MiddleWares())
+		m.services.Router().RegisterGroups(module.GroupsHandlers())
+		m.services.Router().RegisterRoutes(module.Routes())
+
+		if !module.Activated() {
+			m.services.Router().RemoveMiddleWares(module.MiddleWares())
+			m.services.Router().RemoveGroups(module.GroupsHandlers())
+			m.services.Router().RemoveRoutes(module.Routes())
+		}
+	}
 }
 
 func (m *moduleManagerImpl) IsActive(module interfaces.Module) bool {
@@ -215,6 +228,10 @@ func (m *moduleManagerImpl) Deactivate(module interfaces.Module) error {
 
 	model.Flags &= ^ACTIVE
 	m.services.Repository().UpdateEntity(model)
+
+	m.services.Router().RemoveMiddleWares(module.MiddleWares())
+	m.services.Router().RemoveGroups(module.GroupsHandlers())
+	m.services.Router().RemoveRoutes(module.Routes())
 
 	module.Deactivated()
 

@@ -18,7 +18,7 @@ func SetupKernel() interfaces.Services {
 	repo, migrator := database.Initialize(appConfig, appLogger)
 	localizations := trans.Initialize(appConfig, application, appLogger)
 	mm := modules.Initialize(appConfig, migrator)
-	r := router.Initialize(appConfig)
+	r := router.Initialize(appConfig, appLogger)
 
 	s := initializeServices(
 		application,

@@ -9,7 +9,6 @@ import (
 	"github.com/peyman-abdi/avalanche/app/core/logger"
 	"github.com/peyman-abdi/avalanche/app/core/database"
 	application "github.com/peyman-abdi/avalanche/app/core/app"
-	"time"
 	"github.com/peyman-abdi/avalanche/app/core/router"
 )
 
@@ -65,93 +64,14 @@ func init()  {
 
 	repo, mig = database.Initialize(conf, log)
 
-	r = router.Initialize(conf)
+	r = router.Initialize(conf, log)
 
 	mm = Initialize(conf, mig)
 	mm.LoadModules(s)
 }
 
-type TestModel struct {
-	ID int64
-	MyTest string
-	CreatedAt *time.Time
-}
-func (t *TestModel) PrimaryKey() string {
-	return "id"
-}
-func (t *TestModel) TableName() string {
-	return "tests"
-}
-type TestMigratable struct {
-}
-func (t *TestMigratable) Up(migrator interfaces.Migrator) error {
-	var err error
-	if err = mig.AutoMigrate(&TestModel{}); err != nil {
-		return err
-	}
-	return nil
-}
-func (t *TestMigratable) Down(migrator interfaces.Migrator) error {
-	var err error
-	if err = mig.DropTableIfExists(&TestModel{}); err != nil {
-		return err
-	}
-	return nil
-}
-type TestModule struct {
-}
-var _ interfaces.Module = (*TestModule)(nil)
-func (t *TestModule) Title() string { return "TestModule" }
-func (t *TestModule) Description() string { return "Test module" }
-func (t *TestModule) Version() string { return "1.01" }
-func (t *TestModule) Activated() bool { return true }
-func (t *TestModule) Installed() bool { return true }
-func (t *TestModule) Deactivated() { }
-func (t *TestModule) Purged() { }
-func (t *TestModule) Migrations() []interfaces.Migratable {
-	return []interfaces.Migratable {
-		new(TestMigratable),
-	}
-}
-func (t *TestModule) Routes() []*interfaces.Route {
-	return []*interfaces.Route {
-		{
-			Name: "test",
-			Description: "a test route",
-			Group: "/api/tests",
-			MiddleWares: []string {
-				"oauth",
-			},
-			Methods: interfaces.ANY,
-			Url: "/test/<id>/name/<name>",
-			Verify: nil,
-			Handle: func(request interfaces.Request, response interfaces.Response) error {
-
-				return nil
-			},
-		},
-	}
-}
-func (t *TestModule) MiddleWares() map[string]interfaces.RequestHandler {
-	return map[string]interfaces.RequestHandler {
-		"oauth": func(request interfaces.Request, response interfaces.Response) error {
-			return nil
-		},
-	}
-}
-func (t *TestModule) GroupsHandlers() map[string]interfaces.RequestHandler {
-	return map[string]interfaces.RequestHandler {
-		"api": func(request interfaces.Request, response interfaces.Response) error {
-			return nil
-		},
-		"tests": func(request interfaces.Request, response interfaces.Response) error {
-			return nil
-		},
-	}
-}
-
 func TestModuleStatus(t *testing.T) {
-	testModule := new(TestModule)
+	testModule := new(testil.TestMigrationModule)
 	mma := mm.(*moduleManagerImpl)
 	mma.AvailableModules = append(mma.AvailableModules, testModule)
 
@@ -204,6 +124,11 @@ func TestModuleStatus(t *testing.T) {
 	}
 	if len(migrations) != 0 {
 		t.Errorf("Migrations not rolledbacked")
+	}
+
+
+	if err = repo.Insert(&testil.TestMigrationModel{MyTest:"text"}); err != nil {
+		t.Error(err)
 	}
 }
 

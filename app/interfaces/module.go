@@ -7,8 +7,8 @@ type Module interface {
 
 	Migrations() []Migratable
 	Routes() []*Route
-	MiddleWares() map[string]RequestHandler
-	GroupsHandlers() map[string]RequestHandler
+	MiddleWares() []*MiddleWare
+	GroupsHandlers() []*RouteGroup
 
 	Activated() bool
 	Installed() bool
