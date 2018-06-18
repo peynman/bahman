@@ -5,6 +5,13 @@
 ##### CONFIG BUILD
 DEBUG=1
 
+##### TARGET FILES
+SERVER_ENTRY=app/server.go
+CLI_ENTRY=app/commands/cli.go
+LOGGER_MODULES=$(wildcard ./app/core/logger/*/*.go)
+CLI_MODULES=$(wildcard ./app/commands/*/*.go)
+APP_MODULES=$(wildcard ./app/modules/*/main/*.go)
+
 ##### DEPENDENCIES
 DEPENDENCIES=\
  github.com/joho/godotenv \
@@ -20,23 +27,6 @@ DEPENDENCIES=\
  github.com/graphql-go/graphql \
  github.com/stretchr/testify/assert \
 
-##### METHODS
-define getAppModulesPath
-$(MODULES_PATH)/app/$(basename $(notdir $(1))).so
-endef
-define getCliModulesPath
-$(MODULES_PATH)/console/$(basename $(notdir $(1))).so
-endef
-define getLoggerModulesPath
-$(MODULES_PATH)/channels/$(basename $(notdir $(1))).so
-endef
-define getVariant
-$(if ($(DEBUG),1),DEBUG,PRODUCTION)
-endef
-define getPlatform
-$(if ($(OS),Windows_NT),$(if ($(shell uname -s),Linux),OSX,LINUX),WIN32)
-endef
-
 ##### BUILD COMMANDS
 GOCMD=go
 GOBUILD=$(GOCMD) build
@@ -44,11 +34,6 @@ GORUN=$(GOCMD) run
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
-SERVER_ENTRY=app/server.go
-CLI_ENTRY=app/commands/cli.go
-LOGGER_MODULES=$(wildcard ./app/core/logger/*/*.go)
-CLI_MODULES=$(wildcard ./app/commands/*/*.go)
-APP_MODULES=$(wildcard ./app/modules/*/main/*.go)
 
 #### EXPORT PATHES
 BINARY_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)
@@ -97,3 +82,21 @@ go_get:
 sample_env:
 	touch .env
 	touch .env.test
+
+
+##### METHODS
+define getAppModulesPath
+$(MODULES_PATH)/app/$(basename $(notdir $(1))).so
+endef
+define getCliModulesPath
+$(MODULES_PATH)/console/$(basename $(notdir $(1))).so
+endef
+define getLoggerModulesPath
+$(MODULES_PATH)/channels/$(basename $(notdir $(1))).so
+endef
+define getVariant
+$(if ($(DEBUG),1),DEBUG,PRODUCTION)
+endef
+define getPlatform
+$(if ($(OS),Windows_NT),$(if ($(shell uname -s),Linux),OSX,LINUX),WIN32)
+endef

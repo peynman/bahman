@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces"
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"math"
 )
 
-
 type ModulesConsolePlugin struct {
 }
-func (_ *ModulesConsolePlugin) Initialize(services interfaces.Services) bool {
+
+func (_ *ModulesConsolePlugin) Initialize(services core.Services) bool {
 	modulesConsole = new(ModulesConsole)
 	modulesConsole.services = services
 	return true
@@ -16,12 +16,14 @@ func (_ *ModulesConsolePlugin) Initialize(services interfaces.Services) bool {
 func (_ *ModulesConsolePlugin) Interface() interface{} {
 	return modulesConsole
 }
-var PluginInstance interfaces.AvalanchePlugin = new(ModulesConsolePlugin)
+
+var PluginInstance core.AvalanchePlugin = new(ModulesConsolePlugin)
 
 type ModulesConsole struct {
-	services interfaces.Services
+	services core.Services
 }
-var _ interfaces.ConsolePage = (*ModulesConsole)(nil)
+
+var _ core.ConsolePage = (*ModulesConsole)(nil)
 var modulesConsole *ModulesConsole
 
 func (d *ModulesConsole) Title() string {
@@ -33,16 +35,16 @@ func (d *ModulesConsole) Description() string {
 func (d *ModulesConsole) Priority() int {
 	return 10
 }
-func (d *ModulesConsole) ShowModulesList(console interfaces.ConsoleApp, avModules [] interfaces.Module, callback func(module interfaces.Module)) {
-	var items = make([]interfaces.ListItem, int(math.Max(float64(len(avModules)), 1)))
+func (d *ModulesConsole) ShowModulesList(console core.ConsoleApp, avModules []core.Module, callback func(module core.Module)) {
+	var items = make([]core.ListItem, int(math.Max(float64(len(avModules)), 1)))
 
 	if len(avModules) > 0 {
 		for index, module := range avModules {
-			caller := func(lModule interfaces.Module) interfaces.ListItem {
-				return interfaces.ListItem{
-					Title: lModule.Title(),
+			caller := func(lModule core.Module) core.ListItem {
+				return core.ListItem{
+					Title:       lModule.Title(),
 					Description: lModule.Description(),
-					Shortcut: 0,
+					Shortcut:    0,
 					Callback: func() {
 						callback(lModule)
 					},
@@ -51,10 +53,10 @@ func (d *ModulesConsole) ShowModulesList(console interfaces.ConsoleApp, avModule
 			items[index] = caller(module)
 		}
 	} else {
-		items[0] = interfaces.ListItem{
-			Title: "No module found in this list!",
-			Description:"",
-			Shortcut: 0,
+		items[0] = core.ListItem{
+			Title:       "No module found in this list!",
+			Description: "",
+			Shortcut:    0,
 			Callback: func() {
 				console.Back()
 			},
@@ -62,20 +64,20 @@ func (d *ModulesConsole) ShowModulesList(console interfaces.ConsoleApp, avModule
 	}
 	console.SetPage("modules_list", console.MakeList("Available modules", items), true)
 }
-func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
+func (d *ModulesConsole) OnSelected(console core.ConsoleApp) {
 	console.SetPage(
 		"modules_manager_main",
-		console.MakeList("Avalanche Module Management", []interfaces.ListItem {
+		console.MakeList("Avalanche Module Management", []core.ListItem{
 			{
 				"List",
 				"List available module-manager",
 				'l',
 				func() {
 					avModules := d.services.Modules().List()
-					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
-						console.SetPage("module_about", console.MakeModal(interfaces.ModalWindow{
-							Content:module.Title() + " - " + module.Description() + " - Version: " + module.Version(),
-							Buttons:[]string {"Done"},
+					d.ShowModulesList(console, avModules, func(module core.Module) {
+						console.SetPage("module_about", console.MakeModal(core.ModalWindow{
+							Content: module.Title() + " - " + module.Description() + " - Version: " + module.Version(),
+							Buttons: []string{"Done"},
 							Callback: func(buttonIndex int) {
 								console.Back()
 							},
@@ -89,7 +91,7 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				'i',
 				func() {
 					avModules := d.services.Modules().NotInstalled()
-					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+					d.ShowModulesList(console, avModules, func(module core.Module) {
 						console.Ask("Are you sure you want to activate this module?", func(yes bool) {
 							if yes {
 								err := d.services.Modules().Install(module)
@@ -108,7 +110,7 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				'a',
 				func() {
 					avModules := d.services.Modules().Deactivated()
-					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+					d.ShowModulesList(console, avModules, func(module core.Module) {
 
 					})
 				},
@@ -119,7 +121,7 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				'd',
 				func() {
 					avModules := d.services.Modules().Activated()
-					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+					d.ShowModulesList(console, avModules, func(module core.Module) {
 
 					})
 				},
@@ -130,7 +132,7 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 				'p',
 				func() {
 					avModules := d.services.Modules().Installed()
-					d.ShowModulesList(console, avModules, func(module interfaces.Module) {
+					d.ShowModulesList(console, avModules, func(module core.Module) {
 
 					})
 				},
@@ -138,6 +140,3 @@ func (d *ModulesConsole) OnSelected(console interfaces.ConsoleApp) {
 		}),
 		true)
 }
-
-
-

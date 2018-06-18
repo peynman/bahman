@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/peyman-abdi/avalanche/app/modules/core"
 	"github.com/sirupsen/logrus"
-	"github.com/peyman-abdi/avalanche/app/core"
 )
 
 func main() {
@@ -19,5 +19,3 @@ func main() {
 
 	services.Router().Serve()
 }
-
-

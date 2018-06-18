@@ -1,15 +1,15 @@
 package main
 
 import (
-	"github.com/peyman-abdi/avalanche/app/core"
-	"sort"
-	"github.com/rivo/tview"
-	"github.com/peyman-abdi/avalanche/app/interfaces"
 	"github.com/golang-collections/collections/stack"
+	kernel "github.com/peyman-abdi/avalanche/app/modules/core"
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"github.com/rivo/tview"
+	"sort"
 )
 
 func main() {
-	services := core.SetupKernel()
+	services := kernel.SetupKernel()
 
 	console = new(ConsoleAppImpl)
 	console.services = services
@@ -21,25 +21,25 @@ func main() {
 	}
 }
 
-
 type StackPagePair struct {
-	Primitive tview.Primitive
+	Primitive  tview.Primitive
 	FullScreen bool
-	Name string
+	Name       string
 }
 type ConsoleAppImpl struct {
-	services interfaces.Services
-	app tview.Application
-	pages []interfaces.ConsolePage
-	mainMenu *tview.List
+	services   core.Services
+	app        tview.Application
+	pages      []core.ConsolePage
+	mainMenu   *tview.List
 	priorities map[int]int
-	pageStack *stack.Stack
-	pageView *tview.Pages
+	pageStack  *stack.Stack
+	pageView   *tview.Pages
 }
-var _ interfaces.ConsoleApp = (*ConsoleAppImpl)(nil)
+
+var _ core.ConsoleApp = (*ConsoleAppImpl)(nil)
 var console *ConsoleAppImpl
 
-func (c *ConsoleAppImpl) MakeList(title string, items []interfaces.ListItem) interfaces.ConsoleItem {
+func (c *ConsoleAppImpl) MakeList(title string, items []core.ListItem) core.ConsoleItem {
 	list := tview.NewList()
 	for _, item := range items {
 		list.AddItem(item.Title, item.Description, item.Shortcut, item.Callback)
@@ -55,7 +55,7 @@ func (c *ConsoleAppImpl) MakeList(title string, items []interfaces.ListItem) int
 	list.SetTitle(title)
 	return list
 }
-func (c *ConsoleAppImpl) MakeModal(window interfaces.ModalWindow) interfaces.ConsoleItem {
+func (c *ConsoleAppImpl) MakeModal(window core.ModalWindow) core.ConsoleItem {
 	modal := tview.NewModal()
 	modal.SetBorder(true)
 	modal.SetText(window.Content)
@@ -79,9 +79,7 @@ func (c *ConsoleAppImpl) Ask(question string, callback func(bool)) {
 	c.SetPage("ask", modal, false)
 }
 
-
-
-func (c *ConsoleAppImpl) Back()  {
+func (c *ConsoleAppImpl) Back() {
 	if c.pageStack.Len() >= 2 {
 		last := c.pageStack.Pop().(StackPagePair) // current page
 		c.pageView.RemovePage(last.Name)
@@ -94,7 +92,7 @@ func (c *ConsoleAppImpl) Back()  {
 
 	c.app.SetFocus(c.pageView)
 }
-func (c *ConsoleAppImpl) BackToMainMenu()  {
+func (c *ConsoleAppImpl) BackToMainMenu() {
 	for c.pageStack.Len() > 0 {
 		page := c.pageStack.Pop().(StackPagePair)
 		c.pageView.RemovePage(page.Name)
@@ -102,16 +100,16 @@ func (c *ConsoleAppImpl) BackToMainMenu()  {
 	c.pageView.SwitchToPage("main_menu")
 	c.app.SetFocus(c.pageView)
 }
-func (c *ConsoleAppImpl) Quit()  {
+func (c *ConsoleAppImpl) Quit() {
 	c.app.Stop()
 }
-func (c *ConsoleAppImpl) SetPage(name string, item interfaces.ConsoleItem, fullScreen bool) {
+func (c *ConsoleAppImpl) SetPage(name string, item core.ConsoleItem, fullScreen bool) {
 	primitive, ok := item.(tview.Primitive)
 	if ok {
 		c.pageStack.Push(StackPagePair{
-			Primitive: primitive,
+			Primitive:  primitive,
 			FullScreen: fullScreen,
-			Name: name,
+			Name:       name,
 		})
 
 		if fullScreen {
@@ -137,7 +135,7 @@ func (c *ConsoleAppImpl) SetupWithConfPath(confPath string) {
 
 	modules := c.services.App().InitAvalanchePlugins(c.services.App().ModulesPath("console"), c.services)
 	for index, module := range modules {
-		page := module.Interface().(interfaces.ConsolePage)
+		page := module.Interface().(core.ConsolePage)
 		c.pages = append(c.pages, page)
 		c.priorities[page.Priority()] = index
 	}
@@ -148,7 +146,7 @@ func (c *ConsoleAppImpl) SetupWithConfPath(confPath string) {
 	}
 	sort.Ints(priorities)
 
-	shortcuts := []rune {
+	shortcuts := []rune{
 		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 	}
 	indexer := 0
@@ -171,6 +169,6 @@ func (c *ConsoleAppImpl) SetupWithConfPath(confPath string) {
 		SetRoot(c.pageView, true).
 		SetFocus(c.pageView)
 }
-func (c *ConsoleAppImpl) Run() error  {
+func (c *ConsoleAppImpl) Run() error {
 	return c.app.Run()
 }
