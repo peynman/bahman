@@ -1,4 +1,4 @@
-package core
+package kernel
 
 import "github.com/peyman-abdi/avalanche/app/interfaces/core"
 
@@ -11,6 +11,7 @@ type servicesImpl struct {
 	trans  core.Localization
 	mm     core.ModuleManager
 	router core.Router
+	templates core.TemplateEngine
 }
 
 var instance *servicesImpl
@@ -24,6 +25,7 @@ func initializeServices(
 	trans core.Localization,
 	mm core.ModuleManager,
 	router core.Router,
+	templates core.TemplateEngine,
 ) core.Services {
 	instance = new(servicesImpl)
 
@@ -35,6 +37,7 @@ func initializeServices(
 	instance.repo = repo
 	instance.mm = mm
 	instance.router = router
+	instance.templates = templates
 
 	return instance
 }
@@ -47,3 +50,4 @@ func (s *servicesImpl) Logger() core.Logger             { return s.logger }
 func (s *servicesImpl) Modules() core.ModuleManager     { return s.mm }
 func (s *servicesImpl) App() core.Application           { return s.app }
 func (s *servicesImpl) Router() core.Router             { return s.router }
+func (s *servicesImpl) TemplateEngine() core.TemplateEngine   { return s.templates }

@@ -57,6 +57,9 @@ func (a *appImpl) Variant() string {
 func (a *appImpl) BuildTime() string {
 	return BuildTime
 }
+func (a *appImpl) IsDebugMode() bool {
+	return Variant == "DEBUG"
+}
 
 func (a *appImpl) StoragePath(path string) string {
 	return filepath.Join(a.appRoot, "storage", path)

@@ -9,6 +9,7 @@ type Module interface {
 	Routes() []*Route
 	MiddleWares() []*MiddleWare
 	GroupsHandlers() []*RouteGroup
+	Templates() []*Template
 
 	Activated() bool
 	Installed() bool

@@ -9,4 +9,5 @@ type Services interface {
 	Modules() ModuleManager
 	App() Application
 	Router() Router
+	TemplateEngine() TemplateEngine
 }

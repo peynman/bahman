@@ -45,6 +45,7 @@ type Response interface {
 	SuccessString(content string) Response
 	SuccessJSON(json interface{}) Response
 	ContentType(contentType string) Response
+	View(name string, params map[string]interface{}) Response
 }
 
 type Router interface {

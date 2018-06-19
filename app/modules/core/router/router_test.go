@@ -1,39 +1,11 @@
 package router_test
 
 import (
-	application "github.com/peyman-abdi/avalanche/app/modules/core/app"
-	"github.com/peyman-abdi/avalanche/app/modules/core/config"
-	"github.com/peyman-abdi/avalanche/app/modules/core/database"
-	"github.com/peyman-abdi/avalanche/app/modules/core/logger"
-	"github.com/peyman-abdi/avalanche/app/modules/core/modules"
-	"github.com/peyman-abdi/avalanche/app/modules/core/router"
 	"github.com/peyman-abdi/testil"
-	"os"
 	"testing"
 	"time"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
-
-var app core.Application
-var conf core.Config
-var log core.Logger
-var repo core.Repository
-var mig core.Migrator
-var mm core.ModuleManager
-var r core.Router
-var s = new(ServicesMock)
-
-type ServicesMock struct {
-}
-
-func (s *ServicesMock) Repository() core.Repository     { return repo }
-func (s *ServicesMock) Migrator() core.Migrator         { return mig }
-func (s *ServicesMock) Localization() core.Localization { return nil }
-func (s *ServicesMock) Config() core.Config             { return conf }
-func (s *ServicesMock) Logger() core.Logger             { return log }
-func (s *ServicesMock) Modules() core.ModuleManager     { return mm }
-func (s *ServicesMock) App() core.Application           { return app }
-func (s *ServicesMock) Router() core.Router             { return r }
 
 var envs = map[string]string{}
 var configs = map[string]interface{}{
@@ -59,35 +31,22 @@ var configs = map[string]interface{}{
 	},
 }
 
+var s core.Services
 func init() {
-	app = application.Initialize(0)
-	os.MkdirAll(app.StoragePath(""), 0700)
-
-	testil.CreateConfigFiles(app, configs)
-
-	conf = config.Initialize(app)
-	log = logger.Initialize(conf)
-	log.LoadConsole()
-
-	repo, mig = database.Initialize(conf, log)
-
-	r = router.Initialize(conf, log)
-
-	mm = modules.Initialize(conf, mig)
-	mm.LoadModules(s)
+	s = testil.MockServices(configs, envs)
+	testil.CreateTemplateFiles(s.App(), testil.SimpleTemplates)
 }
+
 func TestRoutes(t *testing.T) {
-	module := new(testil.TestMigrationModule)
+	module := new(testil.TestRouteModule)
 	module.S = s
 
-	mig.Migrate(module.Migrations())
-	r.RegisterGroups(module.GroupsHandlers())
-	r.RegisterMiddleWares(module.MiddleWares())
-	r.RegisterRoutes(module.Routes())
+	s.Modules().Install(module)
+	s.Modules().Activate(module)
 
 	ch := make(chan error)
 	go func() {
-		ch <- r.Serve()
+		ch <- s.Router().Serve()
 	}()
 
 	testil.TestGetRequest(t, "http://127.0.0.1:8181/", "hello world")

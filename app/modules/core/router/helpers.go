@@ -78,5 +78,5 @@ func (r *routerImpl) methodsFromInt(method int) (methods []string) {
 	return
 }
 func (r *routerImpl) responseFromContext(ctx *routing.Context) core.Response {
-	return &responseImpl{context: ctx, log: r.log}
+	return &responseImpl{context: ctx, log: r.log, engine: r.engine}
 }

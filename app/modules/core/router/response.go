@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"github.com/peyman-abdi/fasthttp-routing"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	
 )
 
 type responseImpl struct {
 	context *routing.Context
 	log     core.Logger
+	engine	core.TemplateEngine
 }
 
 func (r *responseImpl) SuccessString(content string) core.Response {
@@ -32,6 +34,12 @@ func (r *responseImpl) SuccessJSON(object interface{}) core.Response {
 
 func (r *responseImpl) ContentType(contentType string) core.Response {
 	r.context.SetContentType(contentType)
+	return r
+}
+
+
+func (r *responseImpl) View(name string, params map[string]interface{}) core.Response {
+	r.engine.Render(name, params, r.context.Response.BodyWriter())
 	return r
 }
 

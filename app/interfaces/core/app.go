@@ -14,4 +14,5 @@ type Application interface {
 	Platform() string
 	Variant() string
 	BuildTime() string
+	IsDebugMode() bool
 }

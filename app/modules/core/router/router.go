@@ -17,11 +17,12 @@ type routerImpl struct {
 	domain      string
 	port        string
 	log         core.Logger
+	engine		core.TemplateEngine
 }
 
 var _ core.Router = (*routerImpl)(nil)
 
-func Initialize(config core.Config, logger core.Logger) core.Router {
+func Initialize(config core.Config, logger core.Logger, engine core.TemplateEngine) core.Router {
 	s := new(routerImpl)
 
 	s.router = routing.New()
@@ -34,6 +35,7 @@ func Initialize(config core.Config, logger core.Logger) core.Router {
 
 	s.router.NotFound(handleNotFound)
 	s.log = logger
+	s.engine = engine
 
 	s.port = config.GetAsString("server.port", "8080")
 	s.domain = config.GetAsString("server.address", "127.0.0.1")

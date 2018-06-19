@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/peyman-abdi/avalanche/app/modules/core"
+	"github.com/peyman-abdi/avalanche/app/modules/kernel"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	services := core.SetupKernel()
+	services := kernel.SetupKernel()
 	application := services.App()
 
 	services.Logger().InfoFields("Avalanche Server", logrus.Fields{

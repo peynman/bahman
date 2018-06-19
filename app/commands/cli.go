@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/golang-collections/collections/stack"
-	kernel "github.com/peyman-abdi/avalanche/app/modules/core"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/rivo/tview"
 	"sort"
+	"github.com/peyman-abdi/avalanche/app/modules/kernel"
 )
 
 func main() {

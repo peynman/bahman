@@ -1,37 +1,12 @@
-package modules
+package modules_test
 
 import (
-	application "github.com/peyman-abdi/avalanche/app/modules/core/app"
-	"github.com/peyman-abdi/avalanche/app/modules/core/config"
 	"github.com/peyman-abdi/avalanche/app/modules/core/database"
-	"github.com/peyman-abdi/avalanche/app/modules/core/logger"
-	"github.com/peyman-abdi/avalanche/app/modules/core/router"
 	"github.com/peyman-abdi/testil"
-	"os"
 	"testing"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"reflect"
 )
-
-var app core.Application
-var conf core.Config
-var log core.Logger
-var repo core.Repository
-var mig core.Migrator
-var mm core.ModuleManager
-var r core.Router
-var s = new(ServicesMock)
-
-type ServicesMock struct {
-}
-
-func (s *ServicesMock) Repository() core.Repository     { return repo }
-func (s *ServicesMock) Migrator() core.Migrator         { return mig }
-func (s *ServicesMock) Localization() core.Localization { return nil }
-func (s *ServicesMock) Config() core.Config             { return conf }
-func (s *ServicesMock) Logger() core.Logger             { return log }
-func (s *ServicesMock) Modules() core.ModuleManager     { return mm }
-func (s *ServicesMock) App() core.Application           { return app }
-func (s *ServicesMock) Router() core.Router             { return r }
 
 var envs = map[string]string{}
 var configs = map[string]interface{}{
@@ -53,28 +28,20 @@ var configs = map[string]interface{}{
 	},
 }
 
+var s core.Services
 func init() {
-	app = application.Initialize(0)
-	os.MkdirAll(app.StoragePath(""), 0700)
-
-	testil.CreateConfigFiles(app, configs)
-
-	conf = config.Initialize(app)
-	log = logger.Initialize(conf)
-	log.LoadConsole()
-
-	repo, mig = database.Initialize(conf, log)
-
-	r = router.Initialize(conf, log)
-
-	mm = Initialize(conf, mig)
-	mm.LoadModules(s)
+	s = testil.MockServices(configs, envs)
 }
 
 func TestModuleStatus(t *testing.T) {
 	testModule := new(testil.TestMigrationModule)
-	mma := mm.(*moduleManagerImpl)
-	mma.AvailableModules = append(mma.AvailableModules, testModule)
+
+	mm := s.Modules()
+
+	reflect.ValueOf(mm).Elem().FieldByName("AvailableModules").Set(
+		reflect.ValueOf([]core.Module{testModule}),
+	)
+	repo := s.Repository()
 
 	mm.Install(testModule)
 	mm.Activate(testModule)
