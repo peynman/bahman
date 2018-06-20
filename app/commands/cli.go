@@ -3,13 +3,13 @@ package main
 import (
 	"github.com/golang-collections/collections/stack"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"github.com/peyman-abdi/avalanche/app/modules/kernel"
 	"github.com/rivo/tview"
 	"sort"
-	"github.com/peyman-abdi/avalanche/app/modules/kernel"
 )
 
 func main() {
-	services := kernel.SetupKernel()
+	services := kernel.SetupCLIKernel()
 
 	console = new(ConsoleAppImpl)
 	console.services = services
@@ -72,7 +72,7 @@ func (c *ConsoleAppImpl) Ask(question string, callback func(bool)) {
 	modal.SetBorder(true)
 	modal.SetText(question)
 	modal.SetBorderPadding(5, 5, 5, 5)
-	modal.AddButtons([]string{"Yest", "No"})
+	modal.AddButtons([]string{"Yes", "No"})
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		callback(buttonIndex == 0)
 	})

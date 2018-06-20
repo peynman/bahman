@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"github.com/sirupsen/logrus"
 )
 
 type AvalanchePluginConsole struct {

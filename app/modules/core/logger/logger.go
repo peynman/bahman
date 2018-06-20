@@ -1,9 +1,10 @@
 package logger
 
 import (
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/sirupsen/logrus"
 	"runtime"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"strings"
 )
 
 type loggerImpl struct {
@@ -37,11 +38,11 @@ func (l *loggerImpl) LoadChannels(services core.Services) {
 	}
 
 	/* setup channel drivers */
-	logDrivers := config.GetStringArray("logging.hooks", []string{"console"})
+	logDrivers := config.GetStringArray("logging."+strings.ToLower(services.App().Mode()), []string{})
 	for _, driverName := range logDrivers {
 		driver := l.channels[driverName]
 		if driver == nil {
-			panic("Driver with name " + driver.GetChannelName() + " not found in log channels")
+			panic("Driver with name " + driverName + " not found in log channels")
 		}
 		if driver.Config("logging.channels." + driver.GetChannelName()) {
 			l.loggers = append(l.loggers, driver.GetLogger())
@@ -150,8 +151,8 @@ func (l *loggerImpl) PanicFields(message string, fields map[string]interface{}) 
 
 func appendCallerInfo(fields *map[string]interface{}) {
 	_, file, line, ok := runtime.Caller(2)
-	buf := make([]byte, 1<<16)
-	stackSize := runtime.Stack(buf, true)
+	//buf := make([]byte, 1<<16)
+	//stackSize := runtime.Stack(buf, true)
 
 	if ok {
 		if fields == nil {
@@ -160,6 +161,6 @@ func appendCallerInfo(fields *map[string]interface{}) {
 
 		(*fields)["file"] = file
 		(*fields)["line"] = line
-		(*fields)["stack"] = string(buf[0:stackSize])
+		//(*fields)["stack"] = string(buf[0:stackSize])
 	}
 }

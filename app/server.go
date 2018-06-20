@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	services := kernel.SetupKernel()
+	services := kernel.SetupServerKernel()
 	application := services.App()
 
 	services.Logger().InfoFields("Avalanche Server", logrus.Fields{
@@ -16,6 +16,13 @@ func main() {
 		"Variant":   application.Variant(),
 		"BuildTime": application.BuildTime(),
 	})
+
+	activesModules := services.Modules().Activated()
+	for _, module := range activesModules {
+		services.Logger().InfoFields("Using Module", map[string]interface{}{
+			"module": module.Title(),
+		})
+	}
 
 	services.Router().Serve()
 }

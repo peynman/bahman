@@ -3,8 +3,8 @@ package router
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/peyman-abdi/fasthttp-routing"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"github.com/peyman-abdi/fasthttp-routing"
 )
 
 type requestImpl struct {

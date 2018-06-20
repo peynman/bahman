@@ -13,5 +13,8 @@
             hooks: [],
         },
     },
-    hooks: ["console", "file"],
+
+    server: ["console", "file"],
+    cli: ["file"],
+    test: [],
 }

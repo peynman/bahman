@@ -8,7 +8,7 @@ import (
 )
 
 func TestPaths(t *testing.T) {
-	application := app.Initialize(0)
+	application := app.Initialize(0, "test")
 
 	root, err := os.Executable()
 	if err != nil {

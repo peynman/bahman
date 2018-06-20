@@ -2,15 +2,14 @@ package router
 
 import (
 	"encoding/json"
-	"github.com/peyman-abdi/fasthttp-routing"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
-	
+	"github.com/peyman-abdi/fasthttp-routing"
 )
 
 type responseImpl struct {
 	context *routing.Context
 	log     core.Logger
-	engine	core.TemplateEngine
+	engine  core.TemplateEngine
 }
 
 func (r *responseImpl) SuccessString(content string) core.Response {
@@ -37,9 +36,22 @@ func (r *responseImpl) ContentType(contentType string) core.Response {
 	return r
 }
 
+func (r *responseImpl) StatusCode(statusCode int) core.Response {
+	r.context.SetStatusCode(statusCode)
+	return r
+}
 
 func (r *responseImpl) View(name string, params map[string]interface{}) core.Response {
-	r.engine.Render(name, params, r.context.Response.BodyWriter())
+	err := r.engine.Render(name, params, r.context.Response.BodyWriter())
+	if err != nil {
+		r.ContentType("text/html")
+		r.StatusCode(500)
+		r.engine.Render("error", nil, r.context.Response.BodyWriter())
+		return r
+	}
+
+	r.ContentType("text/html")
+	r.StatusCode(200)
 	return r
 }
 

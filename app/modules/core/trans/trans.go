@@ -3,9 +3,9 @@ package trans
 import (
 	"github.com/hjson/hjson-go"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/conf"
 	"golang.org/x/text/language"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
 
 type localImpl struct {

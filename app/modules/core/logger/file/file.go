@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"time"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
 
 type AvalanchePluginFile struct {

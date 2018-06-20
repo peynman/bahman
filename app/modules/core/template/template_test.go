@@ -1,11 +1,11 @@
 package template_test
 
 import (
-	"testing"
+	"bytes"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/testil"
-	"bytes"
 	"strings"
+	"testing"
 )
 
 var envs = map[string]string{}
@@ -33,6 +33,7 @@ var configs = map[string]interface{}{
 }
 
 var s core.Services
+
 func init() {
 	s = testil.MockServices(configs, envs)
 	testil.CreateTemplateFiles(s.App(), testil.SimpleTemplates)
@@ -66,4 +67,5 @@ func TestInitialize(t *testing.T) {
 	}()
 
 	testil.TestHTMLRequest(t, "http://127.0.0.1:8181/home", "This content will be yielded in the layout above.")
+	testil.TestHTMLRequest(t, "http://127.0.0.1:8181/error", "internal server error")
 }

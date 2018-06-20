@@ -1,21 +1,21 @@
 package template
 
 import (
+	"errors"
+	"fmt"
 	"github.com/CloudyKit/jet"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"io"
-	"errors"
-	"fmt"
 )
 
 type templateHolder struct {
-	meta *core.Template
+	meta     *core.Template
 	template *jet.Template
 }
 
 type templateEngine struct {
-	Views *jet.Set
-	logger core.Logger
+	Views     *jet.Set
+	logger    core.Logger
 	templates []*templateHolder
 }
 
@@ -42,10 +42,27 @@ func (t *templateEngine) ParseTemplates(templates []*core.Template) error {
 
 	return nil
 }
+func (t *templateEngine) AddTemplate(name string, content string) error  {
+	parsed, err := t.Views.LoadTemplate(name, content)
+	if err != nil {
+		t.logger.ErrorFields("Failed adding template", map[string]interface{}{
+			"name": name,
+			"content": content,
+		})
+		return err
+	}
+
+	t.templates = append(t.templates, &templateHolder{
+		meta:     &core.Template{ Name: name, Path: name },
+		template: parsed,
+	})
+
+	return nil
+}
 func (t *templateEngine) ParseTemplate(template *core.Template) error {
 	parsed, err := t.Views.GetTemplate(template.Path)
 	if err != nil {
-		t.logger.ErrorFields("Failed loading template", map[string]interface{} {
+		t.logger.ErrorFields("Failed loading template", map[string]interface{}{
 			"name": template.Name,
 			"path": template.Path,
 		})
@@ -53,8 +70,8 @@ func (t *templateEngine) ParseTemplate(template *core.Template) error {
 	}
 
 	t.templates = append(t.templates, &templateHolder{
-		meta:template,
-		template:parsed,
+		meta:     template,
+		template: parsed,
 	})
 
 	return nil
@@ -69,8 +86,8 @@ func (t *templateEngine) Render(name string, params map[string]interface{}, writ
 			}
 			err := temp.template.Execute(writer, vars, nil)
 			if err != nil {
-				t.logger.ErrorFields("Could not render template due to error", map[string]interface{} {
-					"name": name,
+				t.logger.ErrorFields("Could not render template due to error", map[string]interface{}{
+					"name":  name,
 					"error": err,
 				})
 				return err
@@ -79,7 +96,7 @@ func (t *templateEngine) Render(name string, params map[string]interface{}, writ
 		}
 	}
 
-	t.logger.ErrorFields("Could not find template to render", map[string]interface{} {
+	t.logger.ErrorFields("Could not find template to render", map[string]interface{}{
 		"name": name,
 	})
 	return errors.New(fmt.Sprintf("Template with name %s not found", name))

@@ -92,11 +92,10 @@ func (d *ModulesConsole) OnSelected(console core.ConsoleApp) {
 				func() {
 					avModules := d.services.Modules().NotInstalled()
 					d.ShowModulesList(console, avModules, func(module core.Module) {
-						console.Ask("Are you sure you want to activate this module?", func(yes bool) {
+						console.Ask("Are you sure you want to install this module?", func(yes bool) {
 							if yes {
 								err := d.services.Modules().Install(module)
 								if err != nil {
-
 								}
 							}
 							console.Back()
@@ -111,7 +110,14 @@ func (d *ModulesConsole) OnSelected(console core.ConsoleApp) {
 				func() {
 					avModules := d.services.Modules().Deactivated()
 					d.ShowModulesList(console, avModules, func(module core.Module) {
-
+						console.Ask("Are you sure you want to activate this module?", func(yes bool) {
+							if yes {
+								err := d.services.Modules().Activate(module)
+								if err != nil {
+								}
+							}
+							console.Back()
+						})
 					})
 				},
 			},

@@ -1,10 +1,10 @@
 package config
 
 import (
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/avalanche/app/modules/core/app"
 	gConfig "github.com/peyman-abdi/conf"
 	"time"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
 
 /**

@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	application "github.com/peyman-abdi/avalanche/app/modules/core/app"
 	"github.com/peyman-abdi/avalanche/app/modules/core/config"
 	"github.com/peyman-abdi/avalanche/app/modules/core/database"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"testing"
 	"time"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
 
 var app core.Application
@@ -39,7 +39,7 @@ var configs = map[string]interface{}{
 }
 
 func init() {
-	app = application.Initialize(0)
+	app = application.Initialize(0, "test")
 	os.MkdirAll(app.StoragePath(""), 0700)
 
 	testil.CreateConfigFiles(app, configs)

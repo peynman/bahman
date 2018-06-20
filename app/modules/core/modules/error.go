@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"reflect"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"reflect"
 )
 
 type ModuleErrorImpl struct {

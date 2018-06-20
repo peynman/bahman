@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"time"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"time"
 )
 
 const (

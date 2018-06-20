@@ -1,8 +1,8 @@
 package modules
 
 import (
-	"reflect"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"reflect"
 )
 
 type moduleManagerImpl struct {
@@ -117,19 +117,18 @@ func (m *moduleManagerImpl) Deactivated() []core.Module {
 }
 func (m *moduleManagerImpl) NotInstalled() []core.Module {
 	var models []*ModuleModel
-	m.services.Repository().Query(&ModuleModel{}).Where("(flags & ?) == 0", INSTALLED).Get(&models)
+	m.services.Repository().Query(&ModuleModel{}).Where("flags & ? != 0", INSTALLED).Get(&models)
 
 	var modulesList []core.Module
 	for _, module := range m.AvailableModules {
-		found := false
+		installed := false
 		for _, model := range models {
 			if reflect.TypeOf(module).String() == model.Interface {
-				modulesList = append(modulesList, module)
-				found = true
+				installed = true
 				break
 			}
 		}
-		if !found {
+		if !installed {
 			modulesList = append(modulesList, module)
 		}
 	}
@@ -188,25 +187,7 @@ func (m *moduleManagerImpl) Activate(module core.Module) error {
 		return ModuleError(module, "Target module is already active")
 	}
 
-	if module.MiddleWares() != nil {
-		m.services.Router().RegisterMiddleWares(module.MiddleWares())
-	}
-	if module.GroupsHandlers() != nil {
-		m.services.Router().RegisterGroups(module.GroupsHandlers())
-	}
-	if module.Routes() != nil {
-		m.services.Router().RegisterRoutes(module.Routes())
-	}
-	if module.Templates() != nil {
-		m.services.TemplateEngine().ParseTemplates(module.Templates())
-	}
-
-	model.Flags |= ACTIVE
-	m.services.Repository().UpdateEntity(model)
-
-	if !module.Activated() {
-		m.Deactivate(module)
-
+	if m.safeActivateModule(module) {
 		model.Flags |= ACTIVE
 		m.services.Repository().UpdateEntity(model)
 	}
@@ -243,20 +224,9 @@ func (m *moduleManagerImpl) Deactivate(module core.Module) error {
 		return ModuleError(module, "Target module is not activated yet and can not be deactivated")
 	}
 
+	m.safeDeactivateModule(module)
 	model.Flags &= ^ACTIVE
 	m.services.Repository().UpdateEntity(model)
-
-	if module.MiddleWares() != nil {
-		m.services.Router().RemoveMiddleWares(module.MiddleWares())
-	}
-	if module.GroupsHandlers() != nil {
-		m.services.Router().RemoveGroups(module.GroupsHandlers())
-	}
-	if module.Routes() != nil {
-		m.services.Router().RemoveRoutes(module.Routes())
-	}
-
-	module.Deactivated()
 
 	return nil
 }

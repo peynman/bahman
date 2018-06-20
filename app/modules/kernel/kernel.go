@@ -1,19 +1,26 @@
 package kernel
 
 import (
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/avalanche/app/modules/core/app"
 	"github.com/peyman-abdi/avalanche/app/modules/core/config"
 	"github.com/peyman-abdi/avalanche/app/modules/core/database"
 	"github.com/peyman-abdi/avalanche/app/modules/core/logger"
 	"github.com/peyman-abdi/avalanche/app/modules/core/modules"
 	"github.com/peyman-abdi/avalanche/app/modules/core/router"
-	"github.com/peyman-abdi/avalanche/app/modules/core/trans"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/avalanche/app/modules/core/template"
+	"github.com/peyman-abdi/avalanche/app/modules/core/trans"
 )
 
-func SetupKernel() core.Services {
-	application := app.Initialize(4)
+func SetupServerKernel() core.Services {
+	return setupKernel(4, "SERVER")
+}
+func SetupCLIKernel() core.Services {
+	return setupKernel(4, "CLI")
+}
+
+func setupKernel(roots int, mode string) core.Services {
+	application := app.Initialize(roots, mode)
 	appConfig := config.Initialize(application)
 	appLogger := logger.Initialize(appConfig)
 	repo, migrator := database.Initialize(appConfig, appLogger)

@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"github.com/peyman-abdi/conf"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"github.com/peyman-abdi/conf"
 )
 
 type configImpl struct {

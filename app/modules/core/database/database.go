@@ -3,8 +3,8 @@ package database
 import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
-	"time"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"time"
 )
 
 var (

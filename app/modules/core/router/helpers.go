@@ -1,8 +1,8 @@
 package router
 
 import (
-	"github.com/peyman-abdi/fasthttp-routing"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"github.com/peyman-abdi/fasthttp-routing"
 )
 
 func handleNotFound(c *routing.Context) error {

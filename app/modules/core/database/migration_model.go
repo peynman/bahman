@@ -1,8 +1,8 @@
 package database
 
 import (
-	"time"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"time"
 )
 
 type MigrationModel struct {

@@ -1,15 +1,15 @@
 package config_test
 
 import (
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	application "github.com/peyman-abdi/avalanche/app/modules/core/app"
 	"github.com/peyman-abdi/avalanche/app/modules/core/config"
 	"github.com/peyman-abdi/testil"
 	"testing"
 	"time"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
 
-var app = application.Initialize(0)
+var app = application.Initialize(0, "test")
 var conf core.Config
 var configs = map[string]interface{}{
 	"simple.hjson": map[string]interface{}{

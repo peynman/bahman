@@ -1,10 +1,10 @@
 package router_test
 
 import (
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/testil"
 	"testing"
 	"time"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
 
 var envs = map[string]string{}
@@ -32,6 +32,7 @@ var configs = map[string]interface{}{
 }
 
 var s core.Services
+
 func init() {
 	s = testil.MockServices(configs, envs)
 	testil.CreateTemplateFiles(s.App(), testil.SimpleTemplates)

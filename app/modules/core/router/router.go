@@ -3,10 +3,10 @@ package router
 import (
 	"errors"
 	"fmt"
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/fasthttp-routing"
 	"github.com/valyala/fasthttp"
 	"strings"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
 
 type routerImpl struct {
@@ -17,7 +17,7 @@ type routerImpl struct {
 	domain      string
 	port        string
 	log         core.Logger
-	engine		core.TemplateEngine
+	engine      core.TemplateEngine
 }
 
 var _ core.Router = (*routerImpl)(nil)
@@ -39,6 +39,8 @@ func Initialize(config core.Config, logger core.Logger, engine core.TemplateEngi
 
 	s.port = config.GetAsString("server.port", "8080")
 	s.domain = config.GetAsString("server.address", "127.0.0.1")
+
+	engine.AddTemplate("error", errorPageContent)
 
 	return s
 }

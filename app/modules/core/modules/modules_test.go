@@ -1,11 +1,11 @@
 package modules_test
 
 import (
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/avalanche/app/modules/core/database"
 	"github.com/peyman-abdi/testil"
-	"testing"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"reflect"
+	"testing"
 )
 
 var envs = map[string]string{}
@@ -29,6 +29,7 @@ var configs = map[string]interface{}{
 }
 
 var s core.Services
+
 func init() {
 	s = testil.MockServices(configs, envs)
 }
@@ -55,6 +56,10 @@ func TestModuleStatus(t *testing.T) {
 		t.Errorf("Migrations not happend")
 	}
 
+	if len(mm.NotInstalled()) != 0 {
+		t.Errorf("Module not installed list error")
+	}
+
 	if !mm.IsInstalled(testModule) {
 		t.Errorf("Module not installed!")
 	}
@@ -67,7 +72,6 @@ func TestModuleStatus(t *testing.T) {
 	}
 
 	mm.Deactivate(testModule)
-
 	if mm.IsActive(testModule) {
 		t.Errorf("Module not deactive")
 	}

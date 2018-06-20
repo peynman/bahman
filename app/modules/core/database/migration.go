@@ -3,9 +3,9 @@ package database
 import (
 	"database/sql"
 	"github.com/jinzhu/gorm"
+	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"reflect"
 	"strings"
-	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 )
 
 type MigrationManager struct {

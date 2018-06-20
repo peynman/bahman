@@ -8,7 +8,7 @@ DEBUG=1
 ##### TARGET FILES
 SERVER_ENTRY=app/server.go
 CLI_ENTRY=app/commands/cli.go
-LOGGER_MODULES=$(wildcard ./app/core/logger/*/*.go)
+LOGGER_MODULES=$(wildcard ./app/modules/core/logger/*/*.go)
 CLI_MODULES=$(wildcard ./app/commands/*/*.go)
 APP_MODULES=$(wildcard ./app/modules/*/main/*.go)
 
@@ -34,6 +34,8 @@ GORUN=$(GOCMD) run
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
+GOTOOL=$(GOCMD) tool
+GOFMT=$(GOCMD) fmt
 
 #### EXPORT PATHES
 BINARY_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)
@@ -45,7 +47,7 @@ PLATFORM=$(call getPlatform)
 VARIANT=$(call getVariant)
 BUILD_TIME=$(date ”%Y.%m.%d.%H%M%S”)
 BUILD_CODE=$(shell git rev-parse HEAD)
-VARS_PACKAGE=github.com/peyman-abdi/avalanche/app/core/app
+VARS_PACKAGE=github.com/peyman-abdi/avalanche/app/modules/core/app
 
 LDFLAGS=-ldflags "-X $(VARS_PACKAGE).Version=$(VERSION) -X $(VARS_PACKAGE).Code=$(BUILD_CODE) -X $(VARS_PACKAGE).Variant=$(VARIANT) -X $(VARS_PACKAGE).Platform=$(PLATFORM) -X $(VARS_PACKAGE).BuildTime=$(BUILD_TIME)"
 
@@ -77,11 +79,16 @@ cli_modules:
 	$(foreach file, $(CLI_MODULES), $(GOBUILD) -v -buildmode=plugin -o $(call getCliModulesPath, $(file)) $(file);)
 app_modules:
 	$(foreach file, $(APP_MODULES), $(GOBUILD) -v -buildmode=plugin -o $(call getAppModulesPath, $(file)) $(file);)
+go_coverage:
+	$(GOTOOL) cover -html=coverage.out
+go_format:
+	$(GOFMT) ./app/...
 go_get:
 	@($(foreach dep, $(DEPENDENCIES), $(GOGET) $(dep);))
 sample_env:
 	touch .env
 	touch .env.test
+
 
 
 ##### METHODS

@@ -2,8 +2,8 @@ package database
 
 import (
 	"github.com/jinzhu/gorm"
-	"reflect"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
+	"reflect"
 )
 
 type RepositoryManager struct {

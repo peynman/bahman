@@ -15,13 +15,14 @@ var (
 	Platform    string
 	Variant     string
 	BuildTime   string
+	BuildMode   string
 )
 
 type appImpl struct {
 	appRoot string
 }
 
-func Initialize(roots int) core.Application {
+func Initialize(roots int, buildMode string) core.Application {
 	root, err := os.Executable()
 	if err != nil {
 		panic(err)
@@ -35,6 +36,7 @@ func Initialize(roots int) core.Application {
 	app := &appImpl{
 		appRoot: root,
 	}
+	BuildMode = buildMode
 
 	return app
 }
@@ -56,6 +58,9 @@ func (a *appImpl) Variant() string {
 }
 func (a *appImpl) BuildTime() string {
 	return BuildTime
+}
+func (a *appImpl) Mode() string {
+	return BuildMode
 }
 func (a *appImpl) IsDebugMode() bool {
 	return Variant == "DEBUG"
