@@ -27,6 +27,7 @@ DEPENDENCIES=\
  github.com/json-iterator/go \
  github.com/graphql-go/graphql \
  github.com/stretchr/testify/assert \
+ github.com/golang-collections/collections/stack \
 
 
 ##### BUILD COMMANDS
