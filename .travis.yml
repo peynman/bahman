@@ -6,7 +6,6 @@ go:
 
 install:
   make go_get
-  make sample_env
 
 script:
   make test

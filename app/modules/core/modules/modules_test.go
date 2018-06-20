@@ -3,39 +3,19 @@ package modules_test
 import (
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	"github.com/peyman-abdi/avalanche/app/modules/core/database"
-	"github.com/peyman-abdi/testil"
 	"reflect"
 	"testing"
+	"github.com/peyman-abdi/avest"
 )
-
-var envs = map[string]string{}
-var configs = map[string]interface{}{
-	"app.hjson": map[string]interface{}{
-		"debug": true,
-	},
-	"database.hjson": map[string]interface{}{
-		"app": "sqlite3",
-		"runtime": map[string]interface{}{
-			"migrations": "migrations",
-			"connection": "sqlite3",
-		},
-		"connections": map[string]interface{}{
-			"sqlite3": map[string]interface{}{
-				"driver": "sqlite3",
-				"file":   "storage(\"test.db\")",
-			},
-		},
-	},
-}
 
 var s core.Services
 
 func init() {
-	s = testil.MockServices(configs, envs)
+	s = avest.MockServices(avest.CommonConfigs, avest.CommonEnvs)
 }
 
 func TestModuleStatus(t *testing.T) {
-	testModule := new(testil.TestMigrationModule)
+	testModule := new(avest.TestMigrationModule)
 
 	mm := s.Modules()
 
@@ -98,7 +78,7 @@ func TestModuleStatus(t *testing.T) {
 		t.Errorf("Migrations not rolledbacked")
 	}
 
-	if err = repo.Insert(&testil.TestMigrationModel{MyTest: "text"}); err != nil {
+	if err = repo.Insert(&avest.TestMigrationModel{MyTest: "text"}); err != nil {
 		t.Error(err)
 	}
 }

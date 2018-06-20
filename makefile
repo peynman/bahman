@@ -23,9 +23,11 @@ DEPENDENCIES=\
  github.com/nicksnyder/go-i18n/goi18n \
  github.com/CloudyKit/jet \
  github.com/peyman-abdi/fasthttp-routing \
+ github.com/peyman-abdi/avest \
  github.com/json-iterator/go \
  github.com/graphql-go/graphql \
  github.com/stretchr/testify/assert \
+
 
 ##### BUILD COMMANDS
 GOCMD=go
@@ -85,10 +87,6 @@ go_format:
 	$(GOFMT) ./app/...
 go_get:
 	@($(foreach dep, $(DEPENDENCIES), $(GOGET) $(dep);))
-sample_env:
-	touch .env
-	touch .env.test
-
 
 
 ##### METHODS

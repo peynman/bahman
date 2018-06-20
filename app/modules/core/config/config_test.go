@@ -4,9 +4,9 @@ import (
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
 	application "github.com/peyman-abdi/avalanche/app/modules/core/app"
 	"github.com/peyman-abdi/avalanche/app/modules/core/config"
-	"github.com/peyman-abdi/testil"
 	"testing"
 	"time"
+	"github.com/peyman-abdi/avest"
 )
 
 var app = application.Initialize(0, "test")
@@ -38,7 +38,7 @@ var configs = map[string]interface{}{
 }
 
 func init() {
-	testil.CreateConfigFiles(app, configs)
+	avest.CreateConfigFiles(app, configs)
 	conf = config.Initialize(app)
 }
 

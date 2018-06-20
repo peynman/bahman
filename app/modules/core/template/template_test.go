@@ -3,44 +3,20 @@ package template_test
 import (
 	"bytes"
 	"github.com/peyman-abdi/avalanche/app/interfaces/core"
-	"github.com/peyman-abdi/testil"
 	"strings"
 	"testing"
+	"github.com/peyman-abdi/avest"
 )
-
-var envs = map[string]string{}
-var configs = map[string]interface{}{
-	"app.hjson": map[string]interface{}{
-		"debug": true,
-	},
-	"database.hjson": map[string]interface{}{
-		"app": "sqlite3",
-		"runtime": map[string]interface{}{
-			"migrations": "migrations",
-			"connection": "sqlite3",
-		},
-		"connections": map[string]interface{}{
-			"sqlite3": map[string]interface{}{
-				"driver": "sqlite3",
-				"file":   "storage(\"test.db\")",
-			},
-		},
-	},
-	"server.hjson": map[string]interface{}{
-		"address": "127.0.0.1",
-		"port":    8181,
-	},
-}
 
 var s core.Services
 
 func init() {
-	s = testil.MockServices(configs, envs)
-	testil.CreateTemplateFiles(s.App(), testil.SimpleTemplates)
+	s = avest.MockServices(avest.CommonConfigs, avest.CommonEnvs)
+	avest.CreateTemplateFiles(s.App(), avest.SimpleTemplates)
 }
 
 func TestInitialize(t *testing.T) {
-	module := new(testil.TestRouteModule)
+	module := new(avest.TestRouteModule)
 	module.S = s
 
 	s.Modules().Install(module)
@@ -66,6 +42,6 @@ func TestInitialize(t *testing.T) {
 		ch <- s.Router().Serve()
 	}()
 
-	testil.TestHTMLRequest(t, "http://127.0.0.1:8181/home", "This content will be yielded in the layout above.")
-	testil.TestHTMLRequest(t, "http://127.0.0.1:8181/error", "internal server error")
+	avest.TestHTMLRequest(t, "http://127.0.0.1:8181/home", "This content will be yielded in the layout above.")
+	avest.TestHTMLRequest(t, "http://127.0.0.1:8181/error", "internal server error")
 }

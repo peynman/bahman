@@ -6,10 +6,10 @@ import (
 	"github.com/peyman-abdi/avalanche/app/modules/core/config"
 	"github.com/peyman-abdi/avalanche/app/modules/core/database"
 	"github.com/peyman-abdi/avalanche/app/modules/core/logger"
-	"github.com/peyman-abdi/testil"
 	"os"
 	"testing"
 	"time"
+	"github.com/peyman-abdi/avest"
 )
 
 var app core.Application
@@ -18,31 +18,11 @@ var log core.Logger
 var repo core.Repository
 var mig core.Migrator
 
-var envs = map[string]string{}
-var configs = map[string]interface{}{
-	"app.hjson": map[string]interface{}{
-		"debug": true,
-	},
-	"database.hjson": map[string]interface{}{
-		"app": "sqlite3",
-		"runtime": map[string]interface{}{
-			"migrations": "migrations",
-			"connection": "sqlite3",
-		},
-		"connections": map[string]interface{}{
-			"sqlite3": map[string]interface{}{
-				"driver": "sqlite3",
-				"file":   "storage(\"test.db\")",
-			},
-		},
-	},
-}
-
 func init() {
 	app = application.Initialize(0, "test")
 	os.MkdirAll(app.StoragePath(""), 0700)
 
-	testil.CreateConfigFiles(app, configs)
+	avest.CreateConfigFiles(app, avest.CommonConfigs)
 
 	conf = config.Initialize(app)
 	log = logger.Initialize(conf)
