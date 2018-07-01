@@ -1,11 +1,11 @@
 package auth
 
-import "github.com/peyman-abdi/avalanche/app/interfaces/core"
+import "github.com/peyman-abdi/avalanche/app/interfaces/services"
 
 type MigrateModels struct {
 }
 
-func (*MigrateModels) Up(db core.Migrator) error {
+func (*MigrateModels) Up(db services.Migrator) error {
 	if err := db.AutoMigrate(&PermissionModel{}); err != nil {
 		return err
 	}
@@ -18,7 +18,7 @@ func (*MigrateModels) Up(db core.Migrator) error {
 	return nil
 }
 
-func (*MigrateModels) Down(db core.Migrator) error {
+func (*MigrateModels) Down(db services.Migrator) error {
 	if err := db.DropTableIfExists(&UserModel{}); err != nil {
 		return err
 	}
@@ -31,8 +31,8 @@ func (*MigrateModels) Down(db core.Migrator) error {
 	return nil
 }
 
-func (*AuthenticationModule) Migrations() []core.Migratable {
-	return []core.Migratable{
+func (*AuthenticationModule) Migrations() []services.Migratable {
+	return []services.Migratable{
 		new(MigrateModels),
 	}
 }

@@ -12,6 +12,7 @@
             format: "json",
             hooks: [],
         },
+
     },
 
     server: ["console", "file"],

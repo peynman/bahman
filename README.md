@@ -1,2 +1,2 @@
 # avalanche
-Avalanche Web Server, A fast, multipurpose SAAS solution written in Go 
+Avalanche Web Server, A fast, multipurpose backend solution written in Go

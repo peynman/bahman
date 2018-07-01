@@ -9,7 +9,7 @@ DEBUG=1
 SERVER_ENTRY=app/server.go
 CLI_ENTRY=app/commands/cli.go
 LOGGER_MODULES=$(wildcard ./app/modules/core/logger/*/*.go)
-CLI_MODULES=$(wildcard ./app/commands/*/*.go)
+CLI_MODULES=$(wildcard ./app/commands/modules/*/*.go)
 APP_MODULES=$(wildcard ./app/modules/*/main/*.go)
 
 ##### DEPENDENCIES
@@ -28,6 +28,7 @@ DEPENDENCIES=\
  github.com/graphql-go/graphql \
  github.com/stretchr/testify/assert \
  github.com/golang-collections/collections/stack \
+ github.com/go-redis/redis \
 
 
 ##### BUILD COMMANDS
@@ -43,6 +44,7 @@ GOFMT=$(GOCMD) fmt
 #### EXPORT PATHES
 BINARY_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)
 MODULES_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)/modules
+VARS_PACKAGE=github.com/peyman-abdi/avalanche/app/modules/services/app
 
 #### BUILD VARIABLES
 VERSION=1.0.0-Alpha1
@@ -50,7 +52,6 @@ PLATFORM=$(call getPlatform)
 VARIANT=$(call getVariant)
 BUILD_TIME=$(date ”%Y.%m.%d.%H%M%S”)
 BUILD_CODE=$(shell git rev-parse HEAD)
-VARS_PACKAGE=github.com/peyman-abdi/avalanche/app/modules/core/app
 
 LDFLAGS=-ldflags "-X $(VARS_PACKAGE).Version=$(VERSION) -X $(VARS_PACKAGE).Code=$(BUILD_CODE) -X $(VARS_PACKAGE).Variant=$(VARIANT) -X $(VARS_PACKAGE).Platform=$(PLATFORM) -X $(VARS_PACKAGE).BuildTime=$(BUILD_TIME)"
 
@@ -72,8 +73,6 @@ test:
 clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_PATH)
-run:
-	$(GORUN) $(ENTRY)
 serve:
 	./$(BINARY_PATH)/$(basename $(notdir $(SERVER_ENTRY)))
 logger_modules:

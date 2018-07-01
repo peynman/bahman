@@ -3,11 +3,14 @@ package main
 import (
 	"github.com/peyman-abdi/avalanche/app/modules/kernel"
 	"github.com/sirupsen/logrus"
+	"github.com/peyman-abdi/avalanche/app/modules/auth"
 )
 
 func main() {
 	services := kernel.SetupServerKernel()
 	application := services.App()
+
+	services.Modules().SafeActivate(new (auth.AuthenticationModule))
 
 	services.Logger().InfoFields("Avalanche Server", logrus.Fields{
 		"Version":   application.Version(),
