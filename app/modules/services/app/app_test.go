@@ -1,14 +1,14 @@
 package app_test
 
 import (
-	"github.com/peyman-abdi/avalanche/app/modules/services/app"
+	"github.com/peyman-abdi/bahman/app/modules/services/app"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestPaths(t *testing.T) {
-	application := app.Initialize(0, "test")
+	application := app.New(0, "test")
 
 	root, err := os.Executable()
 	if err != nil {

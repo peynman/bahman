@@ -2,7 +2,7 @@ package renderer_test
 
 import (
 	"bytes"
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"strings"
 	"testing"
 	"github.com/peyman-abdi/avest"
@@ -15,12 +15,11 @@ func init() {
 	avest.CreateTemplateFiles(s.App(), avest.SimpleTemplates)
 }
 
-func TestInitialize(t *testing.T) {
+func TestRenderEngine(t *testing.T) {
 	module := new(avest.TestRouteModule)
 	module.S = s
 
-	s.Modules().Install(module)
-	s.Modules().Activate(module)
+	s.Modules().SafeActivate(module)
 
 	buf := bytes.NewBufferString("")
 	err := s.Renderer().Render("home", nil, buf)
@@ -43,5 +42,4 @@ func TestInitialize(t *testing.T) {
 	}()
 
 	avest.TestHTMLRequest(t, "http://127.0.0.1:8181/home", "This content will be yielded in the layout above.")
-	//avest.TestHTMLRequest(t, "http://127.0.0.1:8181/error", "internal server error")
 }

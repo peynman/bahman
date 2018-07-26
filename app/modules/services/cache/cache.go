@@ -1,11 +1,11 @@
 package cache
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
-	"github.com/peyman-abdi/avalanche/app/modules/services/cache/dialects"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/modules/services/cache/dialects"
 )
 
-func Initialize(app services.Application, conf services.Config, log services.Logger, client services.RedisClient) services.Cache {
+func New(app services.Application, conf services.Config, log services.Logger, client services.RedisClient) services.Cache {
 	c := new(cacheImpl)
 	c.logger = log
 

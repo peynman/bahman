@@ -7,7 +7,7 @@
         },
         file: {
             driver: "daily",
-            path: storage("logs/avalanche.log")
+            path: storage("logs/bahman.log")
             level: "warn",
             format: "json",
             hooks: [],

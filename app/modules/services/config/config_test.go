@@ -1,15 +1,15 @@
 package config_test
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
-	application "github.com/peyman-abdi/avalanche/app/modules/services/app"
-	"github.com/peyman-abdi/avalanche/app/modules/services/config"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
+	application "github.com/peyman-abdi/bahman/app/modules/services/app"
+	"github.com/peyman-abdi/bahman/app/modules/services/config"
 	"testing"
 	"time"
 	"github.com/peyman-abdi/avest"
 )
 
-var app = application.Initialize(0, "test")
+var app = application.New(0, "test")
 var conf services.Config
 var configs = map[string]interface{}{
 	"simple.hjson": map[string]interface{}{
@@ -39,7 +39,7 @@ var configs = map[string]interface{}{
 
 func init() {
 	avest.CreateConfigFiles(app, configs)
-	conf = config.Initialize(app)
+	conf = config.New(app)
 }
 
 func TestSimple(t *testing.T) {

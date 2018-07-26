@@ -1,0 +1,4 @@
+{
+    secret: env(SECRET),
+    algorithm: "sha256",
+}

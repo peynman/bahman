@@ -1,7 +1,25 @@
 {
     address: "127.0.0.1",
     port: 8080,
-    name: "Avalanche Server",
+    name: "Bahman Server",
+    connection: {
+        driver: 'fasthttp',
+        tsl: {
+            cert: env(HTTPS_CERT_PATH),
+            key: env(HTTPS_KEY_PATH),
+        },
+    },
+    router: {
+        static: {
+            autoStart: true,
+        },
+    },
+    sessions: {
+        storage: {
+            driver: "redis",
+            connection: "default",
+        },
+    },
 #    concurrency: 1024 * 1024,
 #    keepAlive: true,
 #    readBufferSize: ,

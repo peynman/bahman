@@ -2,7 +2,7 @@ package services
 
 type Services interface {
 	Repository() Repository
-	Migrator() Migrator
+	Migrator() Migratory
 	Localization() Localization
 	Config() Config
 	Logger() Logger
@@ -12,6 +12,7 @@ type Services interface {
 	Renderer() RenderEngine
 	Redis() RedisClient
 	Cache() Cache
+	Hash() Hash
 	GetByName(name string) interface{}
 }
 

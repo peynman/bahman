@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
-	"github.com/peyman-abdi/avalanche/app/modules/services/app"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/modules/services/app"
 	gConfig "github.com/peyman-abdi/conf"
 	"time"
 )

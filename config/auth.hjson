@@ -1,4 +1,17 @@
 {
-    driver: "auth",
-
+    provider: "auth",
+    session: {
+        expires: eval(60 * 24 * 60 * 60) // 60 days
+    },
+    routes: {
+        views: {
+            active: false,
+            group: "auth",
+            middleWares: [],
+        },
+        api: {
+            group: "api",
+            middleWares: [],
+        },
+    },
 }

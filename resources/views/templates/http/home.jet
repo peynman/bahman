@@ -1,0 +1,16 @@
+{{ extends "vue.jet" }}
+
+{{ block metas() }}
+{{ end }}
+
+{{ block heads() }}
+{{ end }}
+
+{{ block title() }}Bahman Home{{ end }}
+
+{{ block app() }}
+{{ end }}
+
+{{ block scripts() }}
+{{ include "material.jet" }}
+{{ end }}

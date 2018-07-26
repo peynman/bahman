@@ -1,0 +1,5 @@
+{{ extends "layout.jet" }}
+
+{{ block body() }}
+
+{{ end }}

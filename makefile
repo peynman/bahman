@@ -1,16 +1,17 @@
 ##
-## Avalanche build script
+## bahman build script
 ##
 
 ##### CONFIG BUILD
 DEBUG=1
 
 ##### TARGET FILES
-SERVER_ENTRY=app/server.go
-CLI_ENTRY=app/commands/cli.go
-LOGGER_MODULES=$(wildcard ./app/modules/core/logger/*/*.go)
-CLI_MODULES=$(wildcard ./app/commands/modules/*/*.go)
+SERVER_ENTRY=app/server/server.go
+CLI_ENTRY=app/cli/cli.go
+LOGGER_MODULES=$(wildcard ./app/modules/services/logger/*/main/*.go)
+CLI_MODULES=$(wildcard ./app/cli/modules/*/*.go)
 APP_MODULES=$(wildcard ./app/modules/*/main/*.go)
+TEMPLATES=$(wildcard ./app/modules/*/views/templates/*)
 
 ##### DEPENDENCIES
 DEPENDENCIES=\
@@ -29,6 +30,11 @@ DEPENDENCIES=\
  github.com/stretchr/testify/assert \
  github.com/golang-collections/collections/stack \
  github.com/go-redis/redis \
+ github.com/fasthttp-contrib/sessions \
+ github.com/tsenart/vegeta \
+ gopkg.in/mgo.v2/bson \
+ code.google.com/p/go-uuid/uuid \
+ github.com/derekparker/delve/cmd/dlv \
 
 
 ##### BUILD COMMANDS
@@ -44,7 +50,7 @@ GOFMT=$(GOCMD) fmt
 #### EXPORT PATHES
 BINARY_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)
 MODULES_PATH=bin/platforms/$(PLATFORM)/$(VARIANT)/modules
-VARS_PACKAGE=github.com/peyman-abdi/avalanche/app/modules/services/app
+VARS_PACKAGE=github.com/peyman-abdi/bahman/app/modules/services/app
 
 #### BUILD VARIABLES
 VERSION=1.0.0-Alpha1
@@ -54,25 +60,29 @@ BUILD_TIME=$(date ”%Y.%m.%d.%H%M%S”)
 BUILD_CODE=$(shell git rev-parse HEAD)
 
 LDFLAGS=-ldflags "-X $(VARS_PACKAGE).Version=$(VERSION) -X $(VARS_PACKAGE).Code=$(BUILD_CODE) -X $(VARS_PACKAGE).Variant=$(VARIANT) -X $(VARS_PACKAGE).Platform=$(PLATFORM) -X $(VARS_PACKAGE).BuildTime=$(BUILD_TIME)"
-
+DEBUGFLAGS=-gcflags='-N -l'
 #### SCRIPTS
 all: build test
 build_n_serve: build serve
-build: modules build_cli_only build_server_only
+build: modules build_cli_only build_server_only logger_modules
 server_n_serve: build_server_only serve
 build_cli: build_cli_only cli_modules app_modules logger_modules
 build_server: build_server_only logger_modules app_modules
 modules: logger_modules cli_modules app_modules
 
+version:
+	$(GOCMD) version
+copy_templates:
+	$(foreach file, $(TEMPLATES), $(call getPathParent,views,$(file)); )
 build_server_only:
-	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH)/$(basename $(notdir $(SERVER_ENTRY))) -v $(SERVER_ENTRY)
+	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH)/$(basename $(notdir $(SERVER_ENTRY))) -v $(DEBUGFLAGS) $(SERVER_ENTRY)
 build_cli_only:
 	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH)/$(basename $(notdir $(CLI_ENTRY))) -v $(CLI_ENTRY)
 test:
 	$(GOTEST) $(LDFLAGS) -v -covermode=count -coverprofile=coverage.out ./...
 clean:
 	$(GOCLEAN)
-	rm -f $(BINARY_PATH)
+	rm -fdr $(BINARY_PATH)
 serve:
 	./$(BINARY_PATH)/$(basename $(notdir $(SERVER_ENTRY)))
 logger_modules:
@@ -87,9 +97,22 @@ go_format:
 	$(GOFMT) ./app/...
 go_get:
 	@($(foreach dep, $(DEPENDENCIES), $(GOGET) $(dep);))
-
+go_debug:
+	dlv --listen=:2345 --headless=true --api-version=2 exec ./$(BINARY_PATH)/$(basename $(notdir $(SERVER_ENTRY)))
 
 ##### METHODS
+define pathWords
+$(words $(subst /, ,$(dir $1)))
+endef
+define getWordAt
+$(word $1, $(subst /, ,$(dir $2)))
+endef
+define getPathParts
+$(shell for x in {1..$(call pathWords,$1)}; do echo $$x; done)
+endef
+define getPathParent
+$(foreach i, $(call getPathParts,$2), echo $(word $(i),$2) )
+endef
 define getAppModulesPath
 $(MODULES_PATH)/app/$(basename $(notdir $(1))).so
 endef

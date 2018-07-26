@@ -1,41 +1,25 @@
-package main
+package file
 
 import (
 	"fmt"
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"time"
 )
 
-type AvalanchePluginFile struct {
-}
-
-func (_ *AvalanchePluginFile) Initialize(services services.Services) bool {
-	fileLogger = new(FileLogChannel)
-	fileLogger.services = services
-	return true
-}
-func (_ *AvalanchePluginFile) Interface() interface{} {
-	return fileLogger
-}
-
-var PluginInstance services.AvalanchePlugin = new(AvalanchePluginFile)
-
-type FileLogChannel struct {
+type LogChannel struct {
 	services services.Services
 	logger   *logrus.Logger
 }
 
-var _ services.LoggingChannel = (*FileLogChannel)(nil)
-var fileLogger *FileLogChannel
+var _ services.LoggingChannel = (*LogChannel)(nil)
 
-func (logger *FileLogChannel) Config(conf_path string) bool {
-	console := fileLogger
-	console.logger = logrus.New()
-	config := logger.services.Config()
-	app := logger.services.App()
+func (c *LogChannel) Config(conf_path string) bool {
+	c.logger = logrus.New()
+	config := c.services.Config()
+	app := c.services.App()
 
 	nowString := time.Now().Format("2006-01-02")
 	logFilePath := config.GetString(conf_path+".path", app.StoragePath("logs/"+nowString+".log"))
@@ -53,21 +37,21 @@ func (logger *FileLogChannel) Config(conf_path string) bool {
 		fmt.Println(err)
 		return false
 	}
-	console.logger.Out = file
+	c.logger.Out = file
 
 	switch config.GetString(conf_path+".format", "text") {
 	case "json":
-		console.logger.Formatter = new(logrus.JSONFormatter)
+		c.logger.Formatter = new(logrus.JSONFormatter)
 	}
 
-	setLoggerLevel(console.logger, config.GetString(conf_path+".level", "debug"))
+	setLoggerLevel(c.logger, config.GetString(conf_path+".level", "debug"))
 
 	return true
 }
-func (logger *FileLogChannel) GetLogger() *logrus.Logger {
-	return fileLogger.logger
+func (c *LogChannel) GetLogger() interface{} {
+	return c.logger
 }
-func (logger *FileLogChannel) GetChannelName() string {
+func (c *LogChannel) GetChannelName() string {
 	return "file"
 }
 
@@ -85,5 +69,11 @@ func setLoggerLevel(logger *logrus.Logger, formatter string) {
 		logrus.SetLevel(logrus.FatalLevel)
 	case "panic":
 		logrus.SetLevel(logrus.PanicLevel)
+	}
+}
+
+func New(instance services.Services) *LogChannel {
+	return &LogChannel {
+		services: instance,
 	}
 }

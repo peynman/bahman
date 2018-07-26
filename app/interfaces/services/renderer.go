@@ -7,8 +7,18 @@ type Template struct {
 	Path   string
 }
 
+type Parser interface {
+	Load(services Services) error
+	CanParse(template *Template) bool
+	ParseFile(template *Template) error
+	Parse(name string, content string) error
+	Render(template *Template, params map[string]interface{}, writer io.Writer) error
+}
+
 type RenderEngine interface {
-	AddTemplate(name string, content string) error
+	Load(services Services) error
+	AddParser(parser Parser) error
+	AddTemplate(name string, content string, parser Parser) error
 	ParseTemplates(templates []*Template) error
 	ParseTemplate(template *Template) error
 	Render(name string, params map[string]interface{}, writer io.Writer) error

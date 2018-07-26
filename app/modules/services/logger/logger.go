@@ -1,11 +1,14 @@
 package logger
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"github.com/sirupsen/logrus"
 	"runtime"
 	"strings"
+	"github.com/peyman-abdi/bahman/app/modules/services/logger/console"
+	"github.com/peyman-abdi/bahman/app/modules/services/logger/file"
 )
+
 
 type loggerImpl struct {
 	loggers         []*logrus.Logger
@@ -13,7 +16,7 @@ type loggerImpl struct {
 	appendDebugData func(fields *map[string]interface{})
 }
 
-func Initialize(config services.Config) services.Logger {
+func New(config services.Config) services.Logger {
 	log := new(loggerImpl)
 	log.channels = make(map[string]services.LoggingChannel)
 
@@ -27,25 +30,34 @@ func Initialize(config services.Config) services.Logger {
 	return log
 }
 
-func (l *loggerImpl) LoadChannels(references services.Services) {
-	app := references.App()
-	config := references.Config()
+func (l *loggerImpl) LoadChannels(instance services.Services) {
+	app := instance.App()
+	config := instance.Config()
 	/* load channel app */
-	modules := app.InitAvalanchePlugins(app.ModulesPath("channels"), references)
+	modules := app.InitbahmanPlugins(app.ModulesPath("channels"), instance)
 	for _, module := range modules {
-		logChannel := module.Interface().(services.LoggingChannel)
-		l.channels[logChannel.GetChannelName()] = logChannel
+		if logChannel, ok := module.Interface().(services.LoggingChannel); ok {
+			l.channels[logChannel.GetChannelName()] = logChannel
+		}
+	}
+	if len(l.channels) == 0 {
+		l.channels["console"] = console.New(instance)
+		l.channels["file"] = file.New(instance)
 	}
 
 	/* setup channel dialects */
-	logDrivers := config.GetStringArray("logging."+strings.ToLower(references.App().Mode()), []string{})
+	logDrivers := config.GetStringArray("logging."+strings.ToLower(instance.App().Mode()), []string{"console"})
 	for _, driverName := range logDrivers {
 		driver := l.channels[driverName]
 		if driver == nil {
 			panic("Driver with name " + driverName + " not found in log channels")
 		}
 		if driver.Config("logging.channels." + driver.GetChannelName()) {
-			l.loggers = append(l.loggers, driver.GetLogger())
+			if ref, ok := driver.GetLogger().(*logrus.Logger); ok {
+				l.loggers = append(l.loggers, ref)
+			} else {
+				panic("Driver with name " + driverName + " does not have *logrus.Logger type")
+			}
 		}
 	}
 }

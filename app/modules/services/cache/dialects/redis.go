@@ -2,7 +2,7 @@ package dialects
 
 import (
 	"time"
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 )
 
 type RedisCacheDialect struct {

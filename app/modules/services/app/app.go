@@ -1,11 +1,13 @@
 package app
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"os"
 	"path/filepath"
 	"plugin"
 	"strings"
+	"github.com/peyman-abdi/bahman/app/modules/services/errors"
+	path2 "path"
 )
 
 var (
@@ -20,25 +22,23 @@ var (
 
 type appImpl struct {
 	appRoot string
+	instance services.Services
 }
 
-func Initialize(roots int, buildMode string) services.Application {
-	root, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
+func (a *appImpl) AssetsPath(path string) string {
+	return a.ResourcesPath(path2.Join("assets", path))
+}
 
-	root = filepath.Dir(root)
-	for i := roots; i > 0; i-- {
-		root = filepath.Join(root, "..")
-	}
+func (a *appImpl) AssetsUrl(path string) string {
+	//url := a.instance.Router().Url(a.instance.Config().GetString("server.routes.statics.name", "http.assets"))
+	//if !strings.HasSuffix(url, "/") && !strings.HasPrefix(path, "/") {
+	//	url += "/"
+	//}
+	return "assets/" + path
+}
 
-	app := &appImpl{
-		appRoot: root,
-	}
-	BuildMode = buildMode
-
-	return app
+func (a *appImpl) Error(t interface{}, code int, m string) services.ApplicationError {
+	return errors.NewApplicationError(t, code, m)
 }
 
 func (a *appImpl) Version() string {
@@ -90,14 +90,19 @@ func (a *appImpl) TemplatesPath(path string) string {
 	return filepath.Join(a.appRoot, "resources/views/templates", path)
 }
 
-func (a *appImpl) InitAvalanchePlugins(path string, references services.Services) []services.AvalanchePlugin {
+func (i *appImpl) Load(instance services.Services) error {
+	i.instance = instance
+	return nil
+}
+
+func (a *appImpl) InitbahmanPlugins(path string, references services.Services) []services.Plugin {
 	var moduleFiles []string
 	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		moduleFiles = append(moduleFiles, path)
 		return nil
 	})
 
-	var modules []services.AvalanchePlugin
+	var modules []services.Plugin
 	for _, moduleFile := range moduleFiles {
 		if !strings.HasSuffix(moduleFile, ".so") {
 			continue
@@ -113,11 +118,31 @@ func (a *appImpl) InitAvalanchePlugins(path string, references services.Services
 			panic(err)
 		}
 
-		pluginInstance := *pluginInstanceRef.(*services.AvalanchePlugin)
+		pluginInstance := *pluginInstanceRef.(*services.Plugin)
 		if pluginInstance.Initialize(references) {
 			modules = append(modules, pluginInstance)
 		}
 	}
 
 	return modules
+}
+
+
+func New(roots int, buildMode string) services.Application {
+	root, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	root = filepath.Dir(root)
+	for i := roots; i > 0; i-- {
+		root = filepath.Join(root, "..")
+	}
+
+	app := &appImpl{
+		appRoot: root,
+	}
+	BuildMode = buildMode
+
+	return app
 }

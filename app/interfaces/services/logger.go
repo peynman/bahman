@@ -1,10 +1,8 @@
 package services
 
-import "github.com/sirupsen/logrus"
-
 type LoggingChannel interface {
 	Config(string) bool
-	GetLogger() *logrus.Logger
+	GetLogger() interface{}
 	GetChannelName() string
 }
 

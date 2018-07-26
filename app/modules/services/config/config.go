@@ -2,36 +2,13 @@ package config
 
 import (
 	"fmt"
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"github.com/peyman-abdi/conf"
 )
 
 type configImpl struct {
 	config *conf.Config
 }
-
-func Initialize(app services.Application) services.Config {
-	c, err := conf.New(app.ConfigPath(""), app.RootPath(""), []conf.EvaluatorFunction{
-		NewStoragePathEvaluator(app),
-		NewResourcesPathEvaluator(app),
-		NewRootPathEvaluator(app),
-		new(SystemParameterEvaluator),
-		new(TimeEvaluator),
-	})
-
-	if err != nil && c == nil {
-		panic(err)
-	}
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	confImpl := new(configImpl)
-	confImpl.config = c
-
-	return confImpl
-}
-
 func (c *configImpl) IsSet(key string) bool {
 	return c.config.IsSet(key)
 }
@@ -67,4 +44,27 @@ func (c *configImpl) GetMap(key string, def map[string]interface{}) map[string]i
 }
 func (c *configImpl) GetAsString(key string, def string) string {
 	return c.config.GetAsString(key, def)
+}
+
+
+func New(app services.Application) services.Config {
+	c, err := conf.New(app.ConfigPath(""), app.RootPath(""), []conf.EvaluatorFunction{
+		NewStoragePathEvaluator(app),
+		NewResourcesPathEvaluator(app),
+		NewRootPathEvaluator(app),
+		new(SystemParameterEvaluator),
+		new(TimeEvaluator),
+	})
+
+	if err != nil && c == nil {
+		panic(err)
+	}
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	confImpl := new(configImpl)
+	confImpl.config = c
+
+	return confImpl
 }

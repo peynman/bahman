@@ -1,0 +1,7 @@
+{
+    errors: {
+        wrong_password: "Wrong password"
+        user_not_found: "Could not find the user",
+        user_or_pass_wrong: "Username and/or password is wrong"
+    },
+}

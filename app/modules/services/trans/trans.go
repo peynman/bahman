@@ -3,7 +3,7 @@ package trans
 import (
 	"github.com/hjson/hjson-go"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"github.com/peyman-abdi/conf"
 	"golang.org/x/text/language"
 )
@@ -13,24 +13,6 @@ type localImpl struct {
 	localize *i18n.Localizer
 	logger   services.Logger
 }
-
-func Initialize(config services.Config, app services.Application, logger services.Logger) services.Localization {
-	trans := new(localImpl)
-	trans.bundle = &i18n.Bundle{
-		DefaultLanguage: language.English,
-	}
-	trans.bundle.RegisterUnmarshalFunc("hjson", hjson.Unmarshal)
-	trans.logger = logger
-
-	locale := config.GetString("services.locale", "en")
-	langFilesPath := app.ResourcesPath("lang/" + locale)
-	transMessages, _ := conf.New(langFilesPath, "", nil)
-	iterateMapForMessages(getLanguageTagFromString(locale), trans.bundle, transMessages.ConfigsMap, "")
-
-	trans.localize = i18n.NewLocalizer(trans.bundle, locale)
-	return trans
-}
-
 func (t *localImpl) L(key string) string {
 	return t.LP(key, nil)
 }
@@ -75,4 +57,22 @@ func iterateMapForMessages(tag language.Tag, bundle *i18n.Bundle, m map[string]i
 			}
 		}
 	}
+}
+
+
+func New(config services.Config, app services.Application, logger services.Logger) services.Localization {
+	trans := new(localImpl)
+	trans.bundle = &i18n.Bundle{
+		DefaultLanguage: language.English,
+	}
+	trans.bundle.RegisterUnmarshalFunc("hjson", hjson.Unmarshal)
+	trans.logger = logger
+
+	locale := config.GetString("services.locale", "en")
+	langFilesPath := app.ResourcesPath("lang/" + locale)
+	transMessages, _ := conf.New(langFilesPath, "", nil)
+	iterateMapForMessages(getLanguageTagFromString(locale), trans.bundle, transMessages.ConfigsMap, "")
+
+	trans.localize = i18n.NewLocalizer(trans.bundle, locale)
+	return trans
 }

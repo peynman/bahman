@@ -1,48 +1,33 @@
-package main
+package console
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"github.com/sirupsen/logrus"
 )
 
-type AvalanchePluginConsole struct {
-}
-
-func (_ *AvalanchePluginConsole) Initialize(services services.Services) bool {
-	consoleLogger = new(ConsoleLogChannel)
-	consoleLogger.services = services
-	return true
-}
-func (_ *AvalanchePluginConsole) Interface() interface{} {
-	return consoleLogger
-}
-
-var PluginInstance services.AvalanchePlugin = new(AvalanchePluginConsole)
-
-type ConsoleLogChannel struct {
+type LogChannel struct {
 	services services.Services
 	logger   *logrus.Logger
 }
 
-var _ services.LoggingChannel = (*ConsoleLogChannel)(nil)
-var consoleLogger *ConsoleLogChannel
+var _ services.LoggingChannel = (*LogChannel)(nil)
 
-func (logger *ConsoleLogChannel) Config(confPath string) bool {
-	consoleLogger.logger = logrus.New()
+func (c *LogChannel) Config(confPath string) bool {
+	c.logger = logrus.New()
 
-	switch logger.services.Config().GetString(confPath+".format", "text") {
+	switch c.services.Config().GetString(confPath+".format", "text") {
 	case "json":
-		consoleLogger.logger.Formatter = new(logrus.JSONFormatter)
+		c.logger.Formatter = new(logrus.JSONFormatter)
 	}
 
-	setLoggerLevel(consoleLogger.logger, logger.services.Config().GetString(confPath+".level", "debug"))
+	setLoggerLevel(c.logger, c.services.Config().GetString(confPath+".level", "debug"))
 
 	return true
 }
-func (logger *ConsoleLogChannel) GetLogger() *logrus.Logger {
-	return consoleLogger.logger
+func (c *LogChannel) GetLogger() interface{} {
+	return c.logger
 }
-func (logger *ConsoleLogChannel) GetChannelName() string {
+func (c *LogChannel) GetChannelName() string {
 	return "console"
 }
 
@@ -60,5 +45,11 @@ func setLoggerLevel(logger *logrus.Logger, formatter string) {
 		logger.SetLevel(logrus.FatalLevel)
 	case "panic":
 		logger.SetLevel(logrus.PanicLevel)
+	}
+}
+
+func New(instance services.Services) *LogChannel {
+	return &LogChannel{
+		services: instance,
 	}
 }

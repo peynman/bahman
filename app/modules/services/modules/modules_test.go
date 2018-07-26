@@ -1,8 +1,8 @@
 package modules_test
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
-	"github.com/peyman-abdi/avalanche/app/modules/services/database"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/modules/services/orm"
 	"reflect"
 	"testing"
 	"github.com/peyman-abdi/avest"
@@ -28,8 +28,8 @@ func TestModuleStatus(t *testing.T) {
 	mm.Activate(testModule)
 
 	var err error
-	var migrations []*database.MigrationModel
-	if err = repo.Query(&database.MigrationModel{}).GetAll(&migrations); err != nil {
+	var migrations []*orm.MigrationModel
+	if err = repo.Query(&orm.MigrationModel{}).GetAll(&migrations); err != nil {
 		t.Error(err)
 	}
 	if len(migrations) != 1 {
@@ -71,7 +71,7 @@ func TestModuleStatus(t *testing.T) {
 		t.Errorf("Not installed list failed")
 	}
 
-	if err = repo.Query(&database.MigrationModel{}).GetAll(&migrations); err != nil {
+	if err = repo.Query(&orm.MigrationModel{}).GetAll(&migrations); err != nil {
 		t.Error(err)
 	}
 	if len(migrations) != 0 {

@@ -1,61 +1,73 @@
 package redis
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"github.com/go-redis/redis"
 	"time"
+	"fmt"
+	"gopkg.in/mgo.v2/bson"
+	"errors"
+	"reflect"
 )
 
 type redisImpl struct {
-	cluster *redis.ClusterClient
-	client *redis.Client
+	client redis.Cmdable
+	connections map[string]redis.Cmdable
+	logger services.Logger
 }
 
-var instance *redisImpl
+func (r *redisImpl) GetAsMap(key string) (map[string]interface{}, error) {
+	var scanBin string
+	var scanMap map[string]interface{}
+	if err := r.Scan(key, &scanBin); err != nil {
+		return nil, err
+	}
+	err := bson.Unmarshal([]byte(scanBin), &scanMap)
+	if err != nil {
+		return nil, err
+	}
+	return scanMap, nil
+}
+
+func (r *redisImpl) GetAsArray(key string) ([]interface{}, error) {
+	var scanBin string
+	var scanArr []interface{}
+	if err := r.Scan(key, &scanBin); err != nil {
+		return nil, err
+	}
+	err := bson.Unmarshal([]byte(scanBin), &scanArr)
+	if err != nil {
+		return nil, err
+	}
+	return scanArr, nil
+}
+
 var _ services.RedisClient = (*redisImpl)(nil)
-
-func Initialize(config services.Config) services.RedisClient {
-	instance = new(redisImpl)
-
-	clusters := config.GetStringArray("redis.clusters", []string{})
-	if clusters != nil && len(clusters) > 0 {
-		instance.cluster = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs: clusters,
-			Password: config.GetAsString("redis.client.password", ""),
+func (r *redisImpl) Connection(name string) services.RedisClient {
+	if r.connections[name] == nil  {
+		r.logger.ErrorFields("Redis Connection not found", map[string]interface{} {
+			"error": fmt.Sprintf("Connection with name %s not found", name),
+			"name": name,
+			"connections": r.connections,
 		})
-	} else {
-		instance.client = redis.NewClient(&redis.Options{
-			Addr: config.GetString("redis.client.host", "") + ":" +  config.GetAsString("redis.client.port", "6379"),
-			Password: config.GetAsString("redis.client.password", ""),
-			DB: config.GetInt("redis.client.db", 0),
-		})
+		return nil
 	}
 
-	return instance
-}
+	if r.connections[name] != nil {
+		return &redisImpl{
+			client: r.connections[name],
+			connections: r.connections,
+		}
+	}
 
-func Close() {
-	if instance.client != nil {
-		instance.client.Close()
-	}
-	if instance.cluster != nil {
-		instance.cluster.Close()
-	}
+	return nil
 }
 
 func (r *redisImpl) Ping() (string, error) {
 	return r.client.Ping().Result()
 }
 
-func (r *redisImpl) Get(key string) (interface{}, error)  {
-	if r.Exists(key) {
-		return r.client.Get(key).Result()
-	}
-
-	return nil, nil
-}
-
-func (r *redisImpl) GetAsString(key string) (string, error)  {
+func (r *redisImpl) Get(key string) (string, error)  {
 	if r.Exists(key) {
 		return r.client.Get(key).Result()
 	}
@@ -76,21 +88,78 @@ func (r *redisImpl) Delete(key string) error {
 }
 
 func (r *redisImpl) Scan(key string, target interface{}) error  {
-	cmd := r.client.Get(key)
-	if cmd.Err() != nil {
-		return cmd.Err()
+	if !r.Exists(key) {
+		return nil
 	}
 
-	if err := cmd.Scan(target); err != nil {
-		return err
+	switch target.(type) {
+	case *map[string]interface{}, *[]interface{}:
+		bin, err := r.client.Get(key).Result()
+		if err != nil {
+			return err
+		}
+		return bson.Unmarshal([]byte(bin), target)
+	default:
+		return r.client.Get(key).Scan(target)
 	}
-
 	return nil
 }
+
 func (r *redisImpl) Set(key string, val interface{}, expiration *time.Time) error {
 	var d int64 = 0
 	if expiration != nil {
 		d = expiration.UnixNano() - time.Now().UnixNano()
 	}
-	return r.client.Set(key, val, time.Duration(d)).Err()
+	switch val.(type) {
+	case map[string]interface{}, []interface{}:
+		bin, err := bson.Marshal(val)
+		if err != nil {
+			return err
+		}
+		return r.client.Set(key, bin, time.Duration(d)).Err()
+	default:
+		return r.client.Set(key, val, time.Duration(d)).Err()
+	}
+
+	return errors.New(fmt.Sprintf("unknown type of val interface: %s", reflect.TypeOf(val)))
+}
+
+func New(config services.Config, logger services.Logger) services.RedisClient {
+	instance := new(redisImpl)
+	instance.connections = make(map[string]redis.Cmdable)
+	instance.logger = logger
+
+	connectionConfigs := config.GetMap("redis.connections", map[string]interface{}{
+		"local": map[string]interface{} {
+			"host": "127.0.0.1",
+			"port": 6379,
+		},
+	})
+	for conn, params := range connectionConfigs {
+		conconf := params.(map[string]interface{})
+		if conconf["cluster"] == true {
+			c := redis.NewClusterClient(&redis.ClusterOptions{
+				Addrs: config.GetStringArray("redis.connections." + conn + ".clusters", []string{}),
+				Password: config.GetAsString("redis.connections." + conn + ".password", ""),
+			})
+			instance.connections[conn] = c
+		} else {
+			c := redis.NewClient(&redis.Options{
+				Addr: config.GetString("redis.connections." + conn + ".host", "") + ":" +  config.GetAsString("redis.connections." + conn + ".port", "6379"),
+				Password: config.GetAsString("redis.connections." + conn + ".password", ""),
+				DB: config.GetInt("redis.connections." + conn + ".db", 0),
+			})
+			instance.connections[conn] = c
+		}
+	}
+
+	def := config.GetString("redis.default", "local")
+	if instance.connections[def] == nil {
+		panic(fmt.Sprintf("Default connection for Redis client not found: %s, %v", def, connectionConfigs))
+	} else {
+		instance.client = instance.connections[def]
+		instance.connections["default"] = instance.client
+	}
+
+	return instance
 }

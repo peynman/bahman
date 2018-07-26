@@ -1,8 +1,9 @@
 package modules
 
 import (
-	"github.com/peyman-abdi/avalanche/app/interfaces/services"
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
 	"reflect"
+	"errors"
 )
 
 type moduleManagerImpl struct {
@@ -11,7 +12,7 @@ type moduleManagerImpl struct {
 	services         services.Services
 }
 
-func Initialize(config services.Config, migrator services.Migrator) services.ModuleManager {
+func New(config services.Config, migrator services.Migratory) services.ModuleManager {
 	module := new(moduleManagerImpl)
 
 	module.ModuleTableName = config.GetString("modules.table", "modules")
@@ -24,7 +25,7 @@ func Initialize(config services.Config, migrator services.Migrator) services.Mod
 }
 
 func (m *moduleManagerImpl) LoadModules(references services.Services) {
-	modules := references.App().InitAvalanchePlugins(references.App().ModulesPath("app"), references)
+	modules := references.App().InitbahmanPlugins(references.App().ModulesPath("app"), references)
 
 	m.services = references
 	m.AvailableModules = make([]services.Module, len(modules))
@@ -184,6 +185,12 @@ func (m *moduleManagerImpl) SafeActivate(module services.Module) error {
 		err := m.Install(module)
 		if err != nil {
 			return err
+		}
+		if model == nil {
+			m.services.Repository().Query(&ModuleModel{}).Where("interface = ?", reflect.TypeOf(module).String()).GetFirst(&model)
+			if model == nil {
+				return errors.New("")
+			}
 		}
 	}
 	if model.Flags&ACTIVE == 0 {

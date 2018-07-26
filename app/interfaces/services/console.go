@@ -15,6 +15,7 @@ type ModalWindow struct {
 }
 
 type ConsoleApp interface {
+	Run() error
 	Back()
 	BackToMainMenu()
 	Quit()

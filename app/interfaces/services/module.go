@@ -1,5 +1,9 @@
 package services
 
+type ModuleError interface {
+	Module() Module
+}
+
 type Module interface {
 	Title() string
 	Description() string
@@ -10,6 +14,7 @@ type Module interface {
 	MiddleWares() []*MiddleWare
 	GroupsHandlers() []*RouteGroup
 	Templates() []*Template
+	Services() map[string] func() interface {}
 
 	Activated() bool
 	Installed() bool

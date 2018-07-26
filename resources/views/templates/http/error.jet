@@ -1,0 +1,29 @@
+{{ extends "base.jet" }}
+
+{{ block metas() }}
+{{ end }}
+
+{{ block heads() }}
+{{ end }}
+
+{{ block title() }}
+{{ end }}
+
+{{ block body_() }}
+{{ end }}
+
+{{ block body() }}
+    <div>An error accrued</div>
+    <ul>
+        <title>Message</title>
+        <li>{{ message }}</li>
+    </ul>
+    {{ if isset(request) }}
+        <li>Url: {{ request.GetUrl() }}</li>
+        <li>Method: {{ request.GetMethod() }}</li>
+        <li>Stack trace: </li>
+    {{ end }}
+{{ end }}
+
+{{ block scripts() }}
+{{ end }}

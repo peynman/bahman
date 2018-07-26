@@ -1,14 +1,38 @@
 {
-  "name": "avalanche",
+  "name": "bahman",
   "version": "1.0.0",
-  "description": "Avalanche WebServer ",
+  "description": "bahman WebServer ",
   "main": "resources/views/assets/js/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --config webpack.config.dev.js"
   },
   "author": "Peyman Abdi",
   "license": "MIT",
   "devDependencies": {
-    "jquery": "^3.3.1"
+    "@babel/core": "^7.0.0-beta.54",
+    "@babel/plugin-syntax-dynamic-import": "^7.0.0-beta.54",
+    "@babel/preset-env": "^7.0.0-beta.54",
+    "at-ui": "^1.3.3",
+    "babel-loader": "^8.0.0-beta.4",
+    "cross-env": "^5.2.0",
+    "css-loader": "^1.0.0",
+    "extract-loader": "^2.0.1",
+    "handlebars": "^4.0.11",
+    "handlebars-loader": "^1.7.0",
+    "html-webpack-plugin": "^3.2.0",
+    "jquery": "^3.3.1",
+    "node-sass": "^4.9.2",
+    "npm": "^6.2.0",
+    "sass-loader": "^7.0.3",
+    "vue": "^2.5.16",
+    "vue-loader": "^15.2.6",
+    "vue-style-loader": "^4.1.1",
+    "vue-template-compiler": "^2.5.16",
+    "webpack": "^4.16.1",
+    "webpack-cli": "^3.1.0"
+  },
+  "dependencies": {
+    "vue-material": "^1.0.0-beta-10.2"
   }
 }

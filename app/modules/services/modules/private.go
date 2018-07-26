@@ -1,19 +1,41 @@
 package modules
 
-import "github.com/peyman-abdi/avalanche/app/interfaces/services"
+import (
+	"github.com/peyman-abdi/bahman/app/interfaces/services"
+)
 
 func (m *moduleManagerImpl) safeActivateModule(module services.Module) bool {
 	if module.MiddleWares() != nil {
-		m.services.Router().RegisterMiddleWares(module.MiddleWares())
+		if err := m.services.Router().RegisterMiddleWares(module.MiddleWares()); err != nil {
+			m.services.Logger().ErrorFields("Could not register middle wares of module", map[string]interface{} {
+				"err": err,
+				"module": module,
+			})
+		}
 	}
 	if module.GroupsHandlers() != nil {
-		m.services.Router().RegisterGroups(module.GroupsHandlers())
+		if err := m.services.Router().RegisterGroups(module.GroupsHandlers()); err != nil {
+			m.services.Logger().ErrorFields("Could not register group handlers of module", map[string]interface{} {
+				"err": err,
+				"module": module,
+			})
+		}
 	}
 	if module.Routes() != nil {
-		m.services.Router().RegisterRoutes(module.Routes())
+		if err := m.services.Router().RegisterRoutes(module.Routes()); err != nil {
+			m.services.Logger().ErrorFields("Could not register routes of module", map[string]interface{} {
+				"err": err,
+				"module": module,
+			})
+		}
 	}
 	if module.Templates() != nil {
-		m.services.Renderer().ParseTemplates(module.Templates())
+		if err := m.services.Renderer().ParseTemplates(module.Templates()); err != nil {
+			m.services.Logger().ErrorFields("Could not register templates of module", map[string]interface{} {
+				"err": err,
+				"module": module,
+			})
+		}
 	}
 
 	if !module.Activated() {
